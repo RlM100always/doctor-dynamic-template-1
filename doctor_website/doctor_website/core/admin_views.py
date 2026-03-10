@@ -326,68 +326,49 @@ def manage_fees(request):
 
 
 # ── APPOINTMENTS ───────────────────────────────────────────────────────────────
-# ── APPOINTMENTS ───────────────────────────────────────────────────────────────
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Q, Count
+from django.utils import timezone
+from datetime import timedelta
+
+
+
+SORT_WHITELIST = {
+    'date', '-date',
+    'patient_name', '-patient_name',
+    'status', '-status',
+    'created_at', '-created_at',
+}
+
+
 @login_required(login_url='/admin-panel/login/')
 def manage_appointments(request):
-    # Get filter parameters
-    status_filter = request.GET.get('status', '')
-    date_range = request.GET.get('date_range', '')
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-    patient_name = request.GET.get('patient_name', '')
-    phone = request.GET.get('phone', '')
-    note_search = request.GET.get('note_search', '')
+
+    # ── Filter params ──────────────────────────────────────────────
+    status_filter     = request.GET.get('status', '')
+    date_range        = request.GET.get('date_range', '')
+    date_from         = request.GET.get('date_from', '')
+    date_to           = request.GET.get('date_to', '')
+    patient_name      = request.GET.get('patient_name', '')
+    phone             = request.GET.get('phone', '')
+    note_search       = request.GET.get('note_search', '')
     registration_date = request.GET.get('registration_date', '')
-    
-    # Base queryset
-    appts = Appointment.objects.all().order_by('-date', '-created_at')
-    
-    # Apply filters
-    if status_filter:
-        appts = appts.filter(status=status_filter)
-    
-    # Date range filters
-    today = timezone.now().date()
-    
-    if date_range == 'today':
-        appts = appts.filter(date=today)
-    elif date_range == 'yesterday':
-        yesterday = today - timedelta(days=1)
-        appts = appts.filter(date=yesterday)
-    elif date_range == 'last_week':
-        week_ago = today - timedelta(days=7)
-        appts = appts.filter(date__gte=week_ago)
-    elif date_range == 'last_month':
-        month_ago = today - timedelta(days=30)
-        appts = appts.filter(date__gte=month_ago)
-    elif date_range == 'last_year':
-        year_ago = today - timedelta(days=365)
-        appts = appts.filter(date__gte=year_ago)
-    elif date_range == 'custom' and date_from and date_to:
-        appts = appts.filter(date__gte=date_from, date__lte=date_to)
-    
-    # Search filters
-    if patient_name:
-        appts = appts.filter(patient_name__icontains=patient_name)
-    
-    if phone:
-        appts = appts.filter(phone__icontains=phone)
-    
-    if note_search:
-        appts = appts.filter(
-            Q(note__icontains=note_search) | 
-            Q(admin_note__icontains=note_search)
-        )
-    
-    if registration_date:
-        appts = appts.filter(created_at__date=registration_date)
-    
-    # Handle POST requests
+    sort_by           = request.GET.get('sort_by', '-date')
+
+    if sort_by not in SORT_WHITELIST:
+        sort_by = '-date'
+
+    # ── Handle POST ────────────────────────────────────────────────
     if request.method == 'POST':
         action = request.POST.get('action')
-        pk = request.POST.get('pk')
-        obj = get_object_or_404(Appointment, pk=pk)
-        
+        pk     = request.POST.get('pk')
+        obj    = get_object_or_404(Appointment, pk=pk)
+
         if action == 'status':
             obj.status = request.POST.get('status')
             obj.save()
@@ -399,36 +380,107 @@ def manage_appointments(request):
         elif action == 'delete':
             obj.delete()
             messages.success(request, 'মুছে ফেলা হয়েছে।')
-        
-        # Preserve filters after POST
+
         url_params = request.GET.urlencode()
-        return redirect(f'{request.path}?{url_params}' if url_params else request.path)
-    
-    # Pagination
-    paginator = Paginator(appts, 20)  # Show 20 appointments per page
+        return redirect(
+            '{}?{}'.format(request.path, url_params) if url_params else request.path
+        )
+
+    # ── Summary (all appointments, no filter) ──────────────────────
+    today     = timezone.now().date()
+    all_appts = Appointment.objects.all()
+
+    # Status counts for dropdown labels — pure Python dict, no templatetag needed
+    raw_counts = dict(
+        all_appts.values_list('status').annotate(cnt=Count('id')).values_list('status', 'cnt')
+    )
+
+    # Build (value, label, count) tuples — used directly in template
+    status_choices_with_counts = [
+        (val, label, raw_counts.get(val, 0))
+        for val, label in Appointment.STATUS_CHOICES
+    ]
+
+    summary = {
+        'total':     all_appts.count(),
+        'today':     all_appts.filter(date=today).count(),
+        'pending':   all_appts.filter(status='pending').count(),
+        'confirmed': all_appts.filter(status='confirmed').count(),
+        'completed': all_appts.filter(status='completed').count(),
+        'cancelled': all_appts.filter(status='cancelled').count(),
+    }
+
+    # ── Filtered queryset ──────────────────────────────────────────
+    appts = all_appts.order_by(sort_by, '-created_at')
+
+    if status_filter:
+        appts = appts.filter(status=status_filter)
+
+    if date_range == 'today':
+        appts = appts.filter(date=today)
+    elif date_range == 'tomorrow':
+        appts = appts.filter(date=today + timedelta(days=1))
+    elif date_range == 'yesterday':
+        appts = appts.filter(date=today - timedelta(days=1))
+    elif date_range == 'this_week':
+        week_start = today - timedelta(days=today.weekday())
+        appts = appts.filter(date__gte=week_start, date__lte=week_start + timedelta(days=6))
+    elif date_range == 'last_week':
+        appts = appts.filter(date__gte=today - timedelta(days=7))
+    elif date_range == 'this_month':
+        appts = appts.filter(date__year=today.year, date__month=today.month)
+    elif date_range == 'last_month':
+        appts = appts.filter(date__gte=today - timedelta(days=30))
+    elif date_range == 'last_year':
+        appts = appts.filter(date__gte=today - timedelta(days=365))
+    elif date_range == 'custom' and date_from and date_to:
+        appts = appts.filter(date__gte=date_from, date__lte=date_to)
+
+    if patient_name:
+        appts = appts.filter(patient_name__icontains=patient_name)
+    if phone:
+        appts = appts.filter(phone__icontains=phone)
+    if note_search:
+        appts = appts.filter(
+            Q(note__icontains=note_search) | Q(admin_note__icontains=note_search)
+        )
+    if registration_date:
+        appts = appts.filter(created_at__date=registration_date)
+
+    total_filtered = appts.count()
+
+    # ── Pagination ──────────────────────────────────────────────────
+    paginator   = Paginator(appts, 10)
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
+    page_obj    = paginator.get_page(page_number)
+
     return render(request, 'admin_panel/appointments.html', {
-        'appointments': page_obj,
-        'status_filter': status_filter,
-        'date_range': date_range,
-        'date_from': date_from,
-        'date_to': date_to,
-        'patient_name': patient_name,
-        'phone': phone,
-        'note_search': note_search,
-        'registration_date': registration_date,
-        'status_choices': Appointment.STATUS_CHOICES,
+        'appointments':              page_obj,
+        'total_filtered':            total_filtered,
+        'summary':                   summary,
+        'status_choices_with_counts': status_choices_with_counts,  # (val, label, cnt)
+        'status_choices':            Appointment.STATUS_CHOICES,   # for edit modal
+        'status_filter':             status_filter,
+        'date_range':                date_range,
+        'date_from':                 date_from,
+        'date_to':                   date_to,
+        'patient_name':              patient_name,
+        'phone':                     phone,
+        'note_search':               note_search,
+        'registration_date':         registration_date,
+        'sort_by':                   sort_by,
     })
 
-# ── APPOINTMENT DETAILS (AJAX) ─────────────────────────────────────────────────
+
 @login_required(login_url='/admin-panel/login/')
 def appointment_details(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
     return render(request, 'admin_panel/appointment_details.html', {
         'appointment': appointment
     })
+
+
+
 
 
 

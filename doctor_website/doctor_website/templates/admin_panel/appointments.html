@@ -4,80 +4,145 @@
 {% block nav_appointments %}active{% endblock %}
 
 {% block content %}
-<!-- Filter Section -->
+
+<!-- ── SUMMARY STAT CARDS ── -->
+<div class="stat-cards-grid">
+  <div class="stat-card stat-card--total">
+    <div class="stat-card__icon"><i class="fas fa-calendar-alt"></i></div>
+    <div class="stat-card__body">
+      <div class="stat-card__number">{{ summary.total }}</div>
+      <div class="stat-card__label">মোট অ্যাপয়েন্টমেন্ট</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card--today">
+    <div class="stat-card__icon"><i class="fas fa-calendar-day"></i></div>
+    <div class="stat-card__body">
+      <div class="stat-card__number">{{ summary.today }}</div>
+      <div class="stat-card__label">আজকের অ্যাপয়েন্টমেন্ট</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card--pending">
+    <div class="stat-card__icon"><i class="fas fa-clock"></i></div>
+    <div class="stat-card__body">
+      <div class="stat-card__number">{{ summary.pending }}</div>
+      <div class="stat-card__label">অপেক্ষমাণ</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card--confirmed">
+    <div class="stat-card__icon"><i class="fas fa-check-circle"></i></div>
+    <div class="stat-card__body">
+      <div class="stat-card__number">{{ summary.confirmed }}</div>
+      <div class="stat-card__label">নিশ্চিত</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card--completed">
+    <div class="stat-card__icon"><i class="fas fa-user-check"></i></div>
+    <div class="stat-card__body">
+      <div class="stat-card__number">{{ summary.completed }}</div>
+      <div class="stat-card__label">সম্পন্ন</div>
+    </div>
+  </div>
+  <div class="stat-card stat-card--cancelled">
+    <div class="stat-card__icon"><i class="fas fa-times-circle"></i></div>
+    <div class="stat-card__body">
+      <div class="stat-card__number">{{ summary.cancelled }}</div>
+      <div class="stat-card__label">বাতিল</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FILTER SECTION ── -->
 <div class="card">
   <div class="card__header">
-    <span class="card__title"><i class="fas fa-filter"></i> ফিল্টার অপশন</span>
+    <span class="card__title"><i class="fas fa-filter"></i> ফিল্টার ও অনুসন্ধান</span>
+    <button type="button" class="btn btn-sm btn-ghost" id="toggleFilter">
+      <i class="fas fa-chevron-down" id="filterChevron"></i>
+    </button>
   </div>
-  <div class="filter-section">
+  <div class="filter-section" id="filterBody">
     <form method="GET" id="filterForm" class="filter-form">
-      <!-- Date Range Filter -->
+
+      <!-- Row 1: Date -->
       <div class="filter-row">
         <div class="filter-group">
           <label for="date_range"><i class="fas fa-calendar-alt"></i> তারিখ রেঞ্জ:</label>
           <select name="date_range" id="date_range" class="form-control" onchange="toggleCustomDate()">
             <option value="">সব তারিখ</option>
-            <option value="today" {% if date_range == 'today' %}selected{% endif %}>আজ</option>
-            <option value="yesterday" {% if date_range == 'yesterday' %}selected{% endif %}>গতকাল</option>
-            <option value="last_week" {% if date_range == 'last_week' %}selected{% endif %}>গত সপ্তাহ</option>
+            <option value="today"      {% if date_range == 'today' %}selected{% endif %}>আজ</option>
+            <option value="tomorrow"   {% if date_range == 'tomorrow' %}selected{% endif %}>আগামীকাল</option>
+            <option value="yesterday"  {% if date_range == 'yesterday' %}selected{% endif %}>গতকাল</option>
+            <option value="this_week"  {% if date_range == 'this_week' %}selected{% endif %}>এই সপ্তাহ</option>
+            <option value="last_week"  {% if date_range == 'last_week' %}selected{% endif %}>গত সপ্তাহ</option>
+            <option value="this_month" {% if date_range == 'this_month' %}selected{% endif %}>এই মাস</option>
             <option value="last_month" {% if date_range == 'last_month' %}selected{% endif %}>গত মাস</option>
-            <option value="last_year" {% if date_range == 'last_year' %}selected{% endif %}>গত বছর</option>
-            <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>কাস্টম</option>
+            <option value="last_year"  {% if date_range == 'last_year' %}selected{% endif %}>গত বছর</option>
+            <option value="custom"     {% if date_range == 'custom' %}selected{% endif %}>কাস্টম</option>
           </select>
         </div>
-        
-        <div class="filter-group custom-date" id="customDateRange" style="display: none;">
+
+        <div class="filter-group custom-date" id="customDateRange" style="display:none;">
           <label for="date_from">থেকে:</label>
           <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
-          
-          <label for="date_to"> পর্যন্ত:</label>
+          <label for="date_to">পর্যন্ত:</label>
           <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
         </div>
       </div>
 
-      <!-- Search Filters -->
+      <!-- Row 2: Name + Phone -->
       <div class="filter-row">
         <div class="filter-group">
           <label for="patient_name"><i class="fas fa-user"></i> রোগীর নাম:</label>
-          <input type="text" name="patient_name" id="patient_name" class="form-control" 
+          <input type="text" name="patient_name" id="patient_name" class="form-control"
                  placeholder="নাম লিখুন..." value="{{ patient_name }}">
         </div>
-        
         <div class="filter-group">
           <label for="phone"><i class="fas fa-phone"></i> ফোন নম্বর:</label>
-          <input type="text" name="phone" id="phone" class="form-control" 
+          <input type="text" name="phone" id="phone" class="form-control"
                  placeholder="ফোন নম্বর..." value="{{ phone }}">
         </div>
       </div>
 
+      <!-- Row 3: Note + Registration -->
       <div class="filter-row">
         <div class="filter-group">
           <label for="note_search"><i class="fas fa-sticky-note"></i> বিবরণে খুঁজুন:</label>
-          <input type="text" name="note_search" id="note_search" class="form-control" 
+          <input type="text" name="note_search" id="note_search" class="form-control"
                  placeholder="বিবরণের অংশ লিখুন..." value="{{ note_search }}">
         </div>
-
         <div class="filter-group">
           <label for="registration_date"><i class="fas fa-calendar-check"></i> নিবন্ধনের তারিখ:</label>
-          <input type="date" name="registration_date" id="registration_date" class="form-control" 
+          <input type="date" name="registration_date" id="registration_date" class="form-control"
                  value="{{ registration_date }}">
         </div>
       </div>
 
-      <!-- Status Filter -->
+      <!-- Row 4: Status + Sort -->
       <div class="filter-row">
         <div class="filter-group">
           <label for="status"><i class="fas fa-tag"></i> স্ট্যাটাস:</label>
           <select name="status" id="status" class="form-control">
             <option value="">সব স্ট্যাটাস</option>
-            {% for val, label in status_choices %}
-            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+            {% for val, label, cnt in status_choices_with_counts %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>
+              {{ label }}{% if cnt %} ({{ cnt }}){% endif %}
+            </option>
             {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="sort_by"><i class="fas fa-sort"></i> সাজানো:</label>
+          <select name="sort_by" id="sort_by" class="form-control">
+            <option value="-date"         {% if sort_by == '-date' %}selected{% endif %}>তারিখ (নতুন আগে)</option>
+            <option value="date"          {% if sort_by == 'date' %}selected{% endif %}>তারিখ (পুরনো আগে)</option>
+            <option value="patient_name"  {% if sort_by == 'patient_name' %}selected{% endif %}>নাম (A→Z)</option>
+            <option value="-patient_name" {% if sort_by == '-patient_name' %}selected{% endif %}>নাম (Z→A)</option>
+            <option value="status"        {% if sort_by == 'status' %}selected{% endif %}>স্ট্যাটাস</option>
+            <option value="-created_at"   {% if sort_by == '-created_at' %}selected{% endif %}>নিবন্ধন (নতুন আগে)</option>
           </select>
         </div>
       </div>
 
-      <!-- Filter Actions -->
+      <!-- Actions -->
       <div class="filter-actions">
         <button type="submit" class="btn btn-primary">
           <i class="fas fa-search"></i> ফিল্টার প্রয়োগ করুন
@@ -86,23 +151,26 @@
           <i class="fas fa-undo"></i> রিসেট
         </a>
       </div>
+
     </form>
   </div>
 </div>
 
-<!-- Appointments List -->
+<!-- ── APPOINTMENTS TABLE ── -->
 <div class="card">
   <div class="card__header">
     <span class="card__title">
-      <i class="fas fa-calendar-check" style="color:#2e7d32"></i> 
-      সকল অ্যাপয়েন্টমেন্ট ({{ appointments|length }}টি)
+      <i class="fas fa-calendar-check" style="color:#2e7d32"></i>
+      ফলাফল: <strong>{{ total_filtered }}</strong>টি
+      {% if total_filtered != summary.total %}
+      <small class="text-muted">(মোট {{ summary.total }} থেকে)</small>
+      {% endif %}
     </span>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <!-- Export Buttons -->
-      <button onclick="exportToExcel()" class="btn btn-success btn-sm">
+      <button type="button" onclick="exportToExcel()" class="btn btn-success btn-sm">
         <i class="fas fa-file-excel"></i> এক্সপোর্ট
       </button>
-      <button onclick="printTable()" class="btn btn-info btn-sm">
+      <button type="button" onclick="printTable()" class="btn btn-info btn-sm">
         <i class="fas fa-print"></i> প্রিন্ট
       </button>
     </div>
@@ -114,9 +182,23 @@
       <thead>
         <tr>
           <th>#</th>
-          <th>রোগীর নাম</th>
+          <th>
+            <a href="?{% for key,val in request.GET.items %}{% if key != 'sort_by' and key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}sort_by={% if sort_by == 'patient_name' %}-patient_name{% else %}patient_name{% endif %}" class="sort-link">
+              রোগীর নাম
+              {% if sort_by == 'patient_name' %}<i class="fas fa-sort-up"></i>
+              {% elif sort_by == '-patient_name' %}<i class="fas fa-sort-down"></i>
+              {% else %}<i class="fas fa-sort sort-icon-faded"></i>{% endif %}
+            </a>
+          </th>
           <th>ফোন</th>
-          <th>তারিখ</th>
+          <th>
+            <a href="?{% for key,val in request.GET.items %}{% if key != 'sort_by' and key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}sort_by={% if sort_by == '-date' %}date{% else %}-date{% endif %}" class="sort-link">
+              তারিখ
+              {% if sort_by == 'date' %}<i class="fas fa-sort-up"></i>
+              {% elif sort_by == '-date' %}<i class="fas fa-sort-down"></i>
+              {% else %}<i class="fas fa-sort sort-icon-faded"></i>{% endif %}
+            </a>
+          </th>
           <th>সময়</th>
           <th>বিবরণ</th>
           <th>স্ট্যাটাস</th>
@@ -127,36 +209,71 @@
       </thead>
       <tbody>
         {% for appt in appointments %}
-        <tr>
-          <td>{{ appt.pk }}</td>
-          <td><strong>{{ appt.patient_name }}</strong></td>
-          <td><a href="tel:{{ appt.phone }}">{{ appt.phone }}</a></td>
-          <td>{{ appt.date|date:"d/m/Y" }}</td>
-          <td>{{ appt.time_slot }}</td>
+        <tr class="row-status-{{ appt.status }}">
+          <td><small class="text-muted">#{{ appt.pk }}</small></td>
           <td>
-            <small>{{ appt.note|truncatechars:40|default:"—" }}</small>
-            {% if appt.note|length > 40 %}
-            <button class="btn-link" onclick="showFullNote('{{ appt.note|escapejs }}')">আরও</button>
+            <strong>{{ appt.patient_name }}</strong>
+            {% if appt.is_today %}<span class="badge-today">আজ</span>{% endif %}
+          </td>
+          <td>
+            <a href="tel:{{ appt.phone }}" class="phone-link">
+              <i class="fas fa-phone-alt"></i> {{ appt.phone }}
+            </a>
+          </td>
+          <td>
+            <span class="date-cell {% if appt.is_today %}date-today{% elif appt.is_upcoming %}date-upcoming{% elif appt.is_past %}date-past{% endif %}">
+              {{ appt.date|date:"d/m/Y" }}
+            </span>
+          </td>
+          <td><span class="time-badge">{{ appt.time_slot }}</span></td>
+          <td>
+            {% if appt.note %}
+              <small>{{ appt.note|truncatechars:40 }}</small>
+              {% if appt.note|length > 40 %}
+              <button type="button" class="btn-link" onclick="showFullNote('{{ appt.note|escapejs }}')">আরও</button>
+              {% endif %}
+            {% else %}
+              <span class="text-muted">—</span>
             {% endif %}
           </td>
-          <td><span class="badge {{ appt.get_status_badge_class }}">{{ appt.get_status_display }}</span></td>
-          <td><small class="text-muted">{{ appt.created_at|date:"d/m/Y H:i" }}</small></td>
           <td>
-            <small class="text-muted">{{ appt.admin_note|truncatechars:20|default:"—" }}</small>
+            <span class="badge {{ appt.get_status_badge_class }}">
+              {{ appt.get_status_display }}
+            </span>
+          </td>
+          <td>
+            <small class="text-muted">
+              {{ appt.created_at|date:"d/m/Y" }}<br>
+              {{ appt.created_at|date:"H:i" }}
+            </small>
+          </td>
+          <td>
+            {% if appt.admin_note %}
+              <small class="admin-note-preview">{{ appt.admin_note|truncatechars:25 }}</small>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
           </td>
           <td>
             <div class="action-buttons">
-              <button class="btn btn-warning btn-sm btn-icon" onclick="openEditModal({{ appt.pk }},'{{ appt.status }}','{{ appt.admin_note|escapejs }}')" title="সম্পাদনা">
+              <button type="button" class="btn btn-warning btn-sm btn-icon"
+                      onclick="openEditModal({{ appt.pk }},'{{ appt.status }}','{{ appt.admin_note|escapejs }}')"
+                      title="সম্পাদনা">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="btn btn-info btn-sm btn-icon" onclick="viewDetails({{ appt.pk }})" title="বিস্তারিত">
+              <button type="button" class="btn btn-info btn-sm btn-icon"
+                      onclick="viewDetails({{ appt.pk }})"
+                      title="বিস্তারিত">
                 <i class="fas fa-eye"></i>
               </button>
-              <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">
+              <form method="POST" style="display:inline"
+                    onsubmit="return confirm('এই অ্যাপয়েন্টমেন্ট মুছে ফেলতে চান?')">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="pk" value="{{ appt.pk }}">
-                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="মুছুন"><i class="fas fa-trash"></i></button>
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="মুছুন">
+                  <i class="fas fa-trash"></i>
+                </button>
               </form>
             </div>
           </td>
@@ -166,41 +283,59 @@
     </table>
   </div>
 
-  <!-- Pagination -->
+  <!-- ── PAGINATION ── -->
   {% if appointments.paginator.num_pages > 1 %}
-  <div class="pagination">
-    <span class="step-links">
+  <div class="pagination-wrapper">
+    <div class="pagination-info">
+      পাতা {{ appointments.number }} / {{ appointments.paginator.num_pages }}
+      &nbsp;|&nbsp;
+      দেখাচ্ছে {{ appointments.start_index }}–{{ appointments.end_index }} / {{ total_filtered }}টি
+    </div>
+    <div class="pagination">
       {% if appointments.has_previous %}
-        <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; প্রথম</a>
-        <a href="?page={{ appointments.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">পূর্ববর্তী</a>
+        <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-btn" title="প্রথম পাতা"><i class="fas fa-angle-double-left"></i></a>
+        <a href="?page={{ appointments.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-btn"><i class="fas fa-angle-left"></i></a>
+      {% else %}
+        <span class="page-btn disabled"><i class="fas fa-angle-double-left"></i></span>
+        <span class="page-btn disabled"><i class="fas fa-angle-left"></i></span>
       {% endif %}
 
-      <span class="current">
-        পাতা {{ appointments.number }} of {{ appointments.paginator.num_pages }}
-      </span>
+      {% for num in appointments.paginator.page_range %}
+        {% if num >= appointments.number|add:"-2" and num <= appointments.number|add:"2" %}
+          {% if num == appointments.number %}
+            <span class="page-btn page-btn--active">{{ num }}</span>
+          {% else %}
+            <a href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-btn">{{ num }}</a>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
 
       {% if appointments.has_next %}
-        <a href="?page={{ appointments.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">পরবর্তী</a>
-        <a href="?page={{ appointments.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">শেষ &raquo;</a>
+        <a href="?page={{ appointments.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-btn"><i class="fas fa-angle-right"></i></a>
+        <a href="?page={{ appointments.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-btn" title="শেষ পাতা"><i class="fas fa-angle-double-right"></i></a>
+      {% else %}
+        <span class="page-btn disabled"><i class="fas fa-angle-right"></i></span>
+        <span class="page-btn disabled"><i class="fas fa-angle-double-right"></i></span>
       {% endif %}
-    </span>
+    </div>
   </div>
   {% endif %}
 
   {% else %}
   <div class="empty-state">
-    <i class="fas fa-calendar"></i>
+    <i class="fas fa-calendar-times"></i>
     <p>কোনো অ্যাপয়েন্টমেন্ট পাওয়া যায়নি।</p>
+    <a href="{% url 'admin_appointments' %}" class="btn btn-secondary btn-sm">সব দেখুন</a>
   </div>
   {% endif %}
 </div>
 
-<!-- Edit Modal -->
+<!-- ── EDIT MODAL ── -->
 <div class="modal-overlay" id="editModal">
   <div class="modal-box">
     <div class="modal-header">
-      <span class="modal-title">অ্যাপয়েন্টমেন্ট আপডেট করুন</span>
-      <button class="modal-close" onclick="closeModal('editModal')">×</button>
+      <span class="modal-title"><i class="fas fa-edit"></i> অ্যাপয়েন্টমেন্ট আপডেট</span>
+      <button type="button" class="modal-close" onclick="closeModal('editModal')">×</button>
     </div>
     <form method="POST">
       {% csrf_token %}
@@ -218,14 +353,18 @@
         <i class="fas fa-save"></i> স্ট্যাটাস সংরক্ষণ করুন
       </button>
     </form>
-    <div class="divider"></div>
+    <hr class="divider">
     <form method="POST">
       {% csrf_token %}
       <input type="hidden" name="pk" id="editPk2">
       <input type="hidden" name="action" value="note">
       <div class="form-group">
-        <label>ডাক্তারের নোট (রোগী দেখবে না)</label>
-        <textarea name="admin_note" id="editNote" class="form-control" rows="3"></textarea>
+        <label>
+          <i class="fas fa-lock"></i> ডাক্তারের নোট
+          <small class="text-muted">(রোগী দেখবে না)</small>
+        </label>
+        <textarea name="admin_note" id="editNote" class="form-control" rows="4"
+                  placeholder="পরীক্ষার ফলাফল, ওষুধ, পরবর্তী পদক্ষেপ..."></textarea>
       </div>
       <button type="submit" class="btn btn-secondary" style="width:100%">
         <i class="fas fa-sticky-note"></i> নোট সংরক্ষণ করুন
@@ -234,59 +373,62 @@
   </div>
 </div>
 
-<!-- Details Modal -->
+<!-- ── DETAILS MODAL ── -->
 <div class="modal-overlay" id="detailsModal">
   <div class="modal-box modal-lg">
     <div class="modal-header">
-      <span class="modal-title">অ্যাপয়েন্টমেন্ট বিস্তারিত</span>
-      <button class="modal-close" onclick="closeModal('detailsModal')">×</button>
+      <span class="modal-title"><i class="fas fa-info-circle"></i> অ্যাপয়েন্টমেন্ট বিস্তারিত</span>
+      <button type="button" class="modal-close" onclick="closeModal('detailsModal')">×</button>
     </div>
     <div id="detailsContent" class="modal-body">
-      <!-- Content will be loaded via AJAX -->
+      <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>
     </div>
   </div>
 </div>
 
-<!-- Note Modal -->
+<!-- ── NOTE MODAL ── -->
 <div class="modal-overlay" id="noteModal">
   <div class="modal-box">
     <div class="modal-header">
       <span class="modal-title">সম্পূর্ণ বিবরণ</span>
-      <button class="modal-close" onclick="closeModal('noteModal')">×</button>
+      <button type="button" class="modal-close" onclick="closeModal('noteModal')">×</button>
     </div>
     <div class="modal-body">
-      <p id="fullNoteText"></p>
+      <p id="fullNoteText" style="white-space:pre-wrap;line-height:1.8"></p>
     </div>
   </div>
 </div>
 
+<!-- ════════════════════════ SCRIPT ════════════════════════ -->
 <script>
-// Toggle custom date fields
 function toggleCustomDate() {
-  const dateRange = document.getElementById('date_range').value;
-  const customDateDiv = document.getElementById('customDateRange');
-  customDateDiv.style.display = dateRange === 'custom' ? 'flex' : 'none';
+  var v = document.getElementById('date_range').value;
+  document.getElementById('customDateRange').style.display = v === 'custom' ? 'flex' : 'none';
 }
+document.addEventListener('DOMContentLoaded', toggleCustomDate);
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-  toggleCustomDate();
+document.getElementById('toggleFilter').addEventListener('click', function () {
+  var body    = document.getElementById('filterBody');
+  var chevron = document.getElementById('filterChevron');
+  var hidden  = body.style.display === 'none';
+  body.style.display = hidden ? 'block' : 'none';
+  chevron.className  = hidden ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
 });
 
-// Modal functions
-function openModal(id) {
-  document.getElementById(id).style.display = 'flex';
-}
+function openModal(id)  { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-function closeModal(id) {
-  document.getElementById(id).style.display = 'none';
-}
+document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) closeModal(this.id);
+  });
+});
 
 function openEditModal(pk, status, note) {
-  document.getElementById('editPk').value = pk;
-  document.getElementById('editPk2').value = pk;
+  document.getElementById('editPk').value     = pk;
+  document.getElementById('editPk2').value    = pk;
   document.getElementById('editStatus').value = status;
-  document.getElementById('editNote').value = note;
+  document.getElementById('editNote').value   = note;
   openModal('editModal');
 }
 
@@ -296,199 +438,176 @@ function showFullNote(note) {
 }
 
 function viewDetails(pk) {
-  // Fetch details via AJAX
-  fetch(`/admin-panel/appointment-details/${pk}/`)
-    .then(response => response.text())
-    .then(html => {
-      document.getElementById('detailsContent').innerHTML = html;
-      openModal('detailsModal');
-    })
-    .catch(error => {
-      alert('বিস্তারিত তথ্য লোড করতে সমস্যা হয়েছে।');
+  document.getElementById('detailsContent').innerHTML =
+    '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>';
+  openModal('detailsModal');
+  fetch('/admin-panel/appointment-details/' + pk + '/')
+    .then(function(r) { return r.text(); })
+    .then(function(html) { document.getElementById('detailsContent').innerHTML = html; })
+    .catch(function() {
+      document.getElementById('detailsContent').innerHTML =
+        '<p style="color:red;padding:20px">তথ্য লোড করতে সমস্যা হয়েছে।</p>';
     });
 }
 
-// Export to Excel
 function exportToExcel() {
-  const table = document.getElementById('appointmentsTable');
-  const rows = table.querySelectorAll('tr');
-  const csv = [];
-  
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const cols = row.querySelectorAll('td, th');
-    const rowData = [];
-    
-    for (let j = 0; j < cols.length; j++) {
-      // Skip action buttons column
-      if (i > 0 && j === cols.length - 1) continue;
-      
-      let text = cols[j].innerText.replace(/,/g, ' ');
-      rowData.push(text);
-    }
-    
+  var table = document.getElementById('appointmentsTable');
+  var rows  = table.querySelectorAll('tr');
+  var csv   = [];
+  rows.forEach(function(row, i) {
+    var cols    = row.querySelectorAll('td, th');
+    var rowData = [];
+    cols.forEach(function(col, j) {
+      if (i > 0 && j === cols.length - 1) return;
+      rowData.push('"' + col.innerText.replace(/"/g, '""').replace(/\n/g, ' ') + '"');
+    });
     csv.push(rowData.join(','));
-  }
-  
-  const csvContent = csv.join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'appointments.csv';
+  });
+  var blob = new Blob(['\uFEFF' + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'appointments_' + new Date().toISOString().slice(0, 10) + '.csv';
   a.click();
-  window.URL.revokeObjectURL(url);
+  URL.revokeObjectURL(url);
 }
 
-// Print table
 function printTable() {
-  const printContent = document.getElementById('appointmentsTable').cloneNode(true);
-  const originalContent = document.body.innerHTML;
-  
-  // Remove action buttons column for printing
-  printContent.querySelectorAll('tr').forEach(row => {
-    if (row.lastElementChild) {
-      row.removeChild(row.lastElementChild);
-    }
+  var clone = document.getElementById('appointmentsTable').cloneNode(true);
+  clone.querySelectorAll('tr').forEach(function(row) {
+    if (row.lastElementChild) row.removeChild(row.lastElementChild);
   });
-  
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>Appointments List</title>
-        <style>
-          table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; }
-        </style>
-      </head>
-      <body>
-        ${printContent.outerHTML}
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
-  printWindow.print();
+  var w = window.open('', '_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8">'
+    + '<title>অ্যাপয়েন্টমেন্ট তালিকা</title>'
+    + '<style>body{font-family:sans-serif;font-size:13px}'
+    + 'table{border-collapse:collapse;width:100%}'
+    + 'th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}'
+    + 'th{background:#e8f5e9}</style>'
+    + '</head><body><h2>অ্যাপয়েন্টমেন্ট তালিকা</h2>'
+    + clone.outerHTML + '</body></html>');
+  w.document.close();
+  w.print();
 }
-
-// Auto-submit form when date range changes
-document.getElementById('date_range').addEventListener('change', function() {
-  if (this.value !== 'custom') {
-    document.getElementById('filterForm').submit();
-  }
-});
-
-// Search on input with debounce
-let searchTimeout;
-document.querySelectorAll('#patient_name, #phone, #note_search').forEach(input => {
-  input.addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      document.getElementById('filterForm').submit();
-    }, 500);
-  });
-});
 </script>
 
+<!-- ════════════════════════ STYLE ════════════════════════ -->
 <style>
-.filter-section {
-  padding: 20px;
+/* ── Stat Cards ── */
+.stat-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
 }
-
-.filter-form {
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 18px;
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  border-left: 4px solid #ccc;
+  transition: transform .15s;
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-card__icon   { font-size: 1.7rem; opacity: .8; }
+.stat-card__number { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.stat-card__label  { font-size: .75rem; color: #777; margin-top: 3px; }
+.stat-card--total     { border-color: #607d8b; } .stat-card--total     .stat-card__icon { color: #607d8b; }
+.stat-card--today     { border-color: #1565c0; } .stat-card--today     .stat-card__icon { color: #1565c0; }
+.stat-card--pending   { border-color: #f9a825; } .stat-card--pending   .stat-card__icon { color: #f9a825; }
+.stat-card--confirmed { border-color: #2e7d32; } .stat-card--confirmed .stat-card__icon { color: #2e7d32; }
+.stat-card--completed { border-color: #00897b; } .stat-card--completed .stat-card__icon { color: #00897b; }
+.stat-card--cancelled { border-color: #c62828; } .stat-card--cancelled .stat-card__icon { color: #c62828; }
+
+/* ── Filter ── */
+.filter-section { padding: 20px; }
+.filter-form    { display: flex; flex-direction: column; gap: 15px; }
+.filter-row     { display: flex; gap: 20px; flex-wrap: wrap; }
+.filter-group   { flex: 1; min-width: 200px; }
+.filter-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #555; font-size: .9em; }
+.custom-date { display: flex; gap: 10px; align-items: flex-end; }
+.custom-date .form-control { flex: 1; }
+.filter-actions { display: flex; gap: 10px; margin-top: 10px; }
+.btn-ghost { background: none; border: 1px solid #ddd; color: #555; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+
+/* ── Sorting ── */
+.sort-link           { color: inherit; text-decoration: none; white-space: nowrap; }
+.sort-link:hover     { color: #2e7d32; }
+.sort-icon-faded     { opacity: .3; }
+
+/* ── Row tints ── */
+tr.row-status-pending   { background: #fffde7; }
+tr.row-status-cancelled { background: #fce4ec; }
+tr.row-status-completed { background: #e8f5e9; }
+
+/* ── Date ── */
+.date-today    { color: #1565c0; font-weight: 700; }
+.date-upcoming { color: #2e7d32; }
+.date-past     { color: #bbb; }
+.badge-today   {
+  background: #1565c0; color: #fff;
+  font-size: .62rem; padding: 1px 6px;
+  border-radius: 10px; margin-left: 4px;
+  vertical-align: middle;
 }
 
-.filter-row {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+/* ── Time badge ── */
+.time-badge {
+  background: #e8f5e9; color: #2e7d32;
+  font-size: .8rem; padding: 2px 8px;
+  border-radius: 8px; white-space: nowrap;
 }
 
-.filter-group {
-  flex: 1;
-  min-width: 200px;
-}
+/* ── Phone link ── */
+.phone-link { color: #1565c0; text-decoration: none; font-size: .9em; }
+.phone-link:hover { text-decoration: underline; }
 
-.filter-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-  color: #555;
-  font-size: 0.9em;
-}
+/* ── Admin note ── */
+.admin-note-preview { color: #666; font-style: italic; }
 
-.filter-group .form-control {
-  width: 100%;
+/* ── Pagination ── */
+.pagination-wrapper {
+  padding: 14px 20px;
+  display: flex; align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+  border-top: 1px solid #eee;
 }
-
-.custom-date {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
+.pagination-info { font-size: .85rem; color: #777; }
+.pagination      { display: flex; gap: 4px; }
+.page-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; height: 34px; padding: 0 8px;
+  border: 1px solid #ddd; border-radius: 6px;
+  color: #333; text-decoration: none; font-size: .85rem;
+  transition: all .15s;
 }
-
-.custom-date .form-control {
-  flex: 1;
+.page-btn:hover:not(.disabled):not(.page-btn--active) {
+  background: #e8f5e9; border-color: #2e7d32; color: #2e7d32;
 }
+.page-btn--active { background: #2e7d32; color: #fff; border-color: #2e7d32; font-weight: 700; }
+.page-btn.disabled { opacity: .35; cursor: default; pointer-events: none; }
 
-.filter-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-start;
-  margin-top: 10px;
-}
+/* ── Empty state ── */
+.empty-state { padding: 60px 20px; text-align: center; color: #aaa; }
+.empty-state i { font-size: 3rem; display: block; margin-bottom: 12px; }
 
-.filter-actions .btn {
-  padding: 10px 20px;
-}
+/* ── Modal ── */
+.modal-lg        { max-width: 820px; width: 92%; }
+.loading-spinner { text-align: center; padding: 40px; color: #777; font-size: 1.1rem; }
+.divider         { border: 0; border-top: 1px solid #eee; margin: 16px 0; }
 
-.pagination {
-  padding: 20px;
-  text-align: center;
-}
+/* ── Misc ── */
+.btn-link   { background: none; border: none; color: #1565c0; cursor: pointer; text-decoration: underline; font-size: .85em; padding: 0; }
+.text-muted { color: #999; font-size: .85em; }
 
-.pagination .step-links a {
-  display: inline-block;
-  padding: 5px 10px;
-  margin: 0 2px;
-  border: 1px solid #ddd;
-  text-decoration: none;
-  color: #333;
-}
-
-.pagination .step-links a:hover {
-  background-color: #f5f5f5;
-}
-
-.pagination .current {
-  display: inline-block;
-  padding: 5px 10px;
-  margin: 0 2px;
-  background-color: #2e7d32;
-  color: white;
-  border: 1px solid #2e7d32;
-}
-
-.modal-lg {
-  max-width: 800px;
-  width: 90%;
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: #007bff;
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: 0.9em;
-}
-
-.btn-link:hover {
-  color: #0056b3;
+@media (max-width: 600px) {
+  .stat-cards-grid    { grid-template-columns: repeat(2, 1fr); }
+  .filter-row         { flex-direction: column; gap: 10px; }
+  .pagination-wrapper { flex-direction: column; align-items: flex-start; }
 }
 </style>
 {% endblock %}
