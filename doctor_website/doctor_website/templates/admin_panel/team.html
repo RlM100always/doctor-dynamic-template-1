@@ -1,0 +1,98 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}টিম সদস্য{% endblock %}
+{% block page_title %}টিম সদস্য ব্যবস্থাপনা{% endblock %}
+{% block nav_team %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-users" style="color:#2e7d32"></i> টিম সদস্যগণ</span>
+    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন সদস্য যোগ করুন</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="tbl">
+    <thead><tr><th>#</th><th>নাম</th><th>পদবি</th><th>যোগ্যতা</th><th>প্রধান</th><th>ক্রম</th><th>কার্যক্রম</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.pk }}</td>
+        <td>
+          {% if item.get_photo %}
+          <img src="{{ item.get_photo }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle">
+          {% endif %}
+          <strong>{{ item.name }}</strong>
+        </td>
+        <td>{{ item.role }}</td>
+        <td><small>{{ item.qualifications }}</small></td>
+        <td>{% if item.is_lead %}<span class="badge badge-warning">প্রধান</span>{% else %}—{% endif %}</td>
+        <td>{{ item.order }}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-warning btn-sm btn-icon" onclick="openEdit({{ item.pk }},'{{ item.role|escapejs }}','{{ item.name|escapejs }}','{{ item.qualifications|escapejs }}','{{ item.photo_url|escapejs }}','{{ item.icon_class|escapejs }}',{{ item.is_lead|yesno:'true,false' }},{{ item.order }})"><i class="fas fa-edit"></i></button>
+            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7"><div class="empty-state"><i class="fas fa-users"></i><p>কোনো সদস্য নেই</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">নতুন সদস্য যোগ করুন</span><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
+    <form method="POST" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="form-row">
+        <div class="form-group"><label>পদবি *</label><input type="text" name="role" class="form-control" required placeholder="সহকারী বিশেষজ্ঞ"/></div>
+        <div class="form-group"><label>নাম *</label><input type="text" name="name" class="form-control" required /></div>
+      </div>
+      <div class="form-group"><label>যোগ্যতা *</label><input type="text" name="qualifications" class="form-control" required /></div>
+      <div class="form-row">
+        <div class="form-group"><label>ছবি আপলোড</label><input type="file" name="photo" class="form-control" accept="image/*"/></div>
+        <div class="form-group"><label>ছবির URL (বিকল্প)</label><input type="url" name="photo_url" class="form-control"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>আইকন ক্লাস</label><input type="text" name="icon_class" class="form-control" value="fas fa-user-md"/></div>
+        <div class="form-group"><label>ক্রম</label><input type="number" name="order" class="form-control" value="0"/></div>
+      </div>
+      <div class="form-group checkbox-group"><input type="checkbox" name="is_lead" id="addLead"><label for="addLead">প্রধান বিশেষজ্ঞ</label></div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">সদস্য সম্পাদনা করুন</span><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
+    <form method="POST" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="pk" id="editPk">
+      <div class="form-row">
+        <div class="form-group"><label>পদবি</label><input type="text" name="role" id="editRole" class="form-control"/></div>
+        <div class="form-group"><label>নাম</label><input type="text" name="name" id="editName" class="form-control"/></div>
+      </div>
+      <div class="form-group"><label>যোগ্যতা</label><input type="text" name="qualifications" id="editQual" class="form-control"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>নতুন ছবি (ঐচ্ছিক)</label><input type="file" name="photo" class="form-control" accept="image/*"/></div>
+        <div class="form-group"><label>ছবির URL</label><input type="url" name="photo_url" id="editPhotoUrl" class="form-control"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>আইকন ক্লাস</label><input type="text" name="icon_class" id="editIcon" class="form-control"/></div>
+        <div class="form-group"><label>ক্রম</label><input type="number" name="order" id="editOrder" class="form-control"/></div>
+      </div>
+      <div class="form-group checkbox-group"><input type="checkbox" name="is_lead" id="editLead"><label for="editLead">প্রধান বিশেষজ্ঞ</label></div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> আপডেট করুন</button>
+    </form>
+  </div>
+</div>
+<script>
+function openEdit(pk,role,name,qual,photoUrl,icon,isLead,order){
+  document.getElementById('editPk').value=pk;
+  document.getElementById('editRole').value=role;
+  document.getElementById('editName').value=name;
+  document.getElementById('editQual').value=qual;
+  document.getElementById('editPhotoUrl').value=photoUrl;
+  document.getElementById('editIcon').value=icon;
+  document.getElementById('editLead').checked=isLead;
+  document.getElementById('editOrder').value=order;
+  openModal('editModal');
+}
+</script>
+{% endblock %}

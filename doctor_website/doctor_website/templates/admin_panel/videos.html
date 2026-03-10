@@ -1,0 +1,74 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}ভিডিও{% endblock %}
+{% block page_title %}ভিডিও গ্যালারি{% endblock %}
+{% block nav_videos %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-video" style="color:#2e7d32"></i> ভিডিওসমূহ</span>
+    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন ভিডিও যোগ করুন</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="tbl">
+    <thead><tr><th>#</th><th>শিরোনাম</th><th>ট্যাগ</th><th>YouTube URL</th><th>ক্রম</th><th>অবস্থা</th><th>কার্যক্রম</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.pk }}</td>
+        <td><strong>{{ item.title }}</strong></td>
+        <td><span class="badge badge-info">{{ item.tag }}</span></td>
+        <td><small><a href="{{ item.youtube_url }}" target="_blank">{{ item.youtube_url|truncatechars:40 }}</a></small></td>
+        <td>{{ item.order }}</td>
+        <td>{% if item.is_active %}<span class="badge badge-success">সক্রিয়</span>{% else %}<span class="badge badge-secondary">লুকানো</span>{% endif %}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-warning btn-sm btn-icon" onclick="openEdit({{ item.pk }},'{{ item.youtube_url|escapejs }}','{{ item.title|escapejs }}','{{ item.tag|escapejs }}',{{ item.order }})"><i class="fas fa-edit"></i></button>
+            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7"><div class="empty-state"><i class="fas fa-video"></i><p>কোনো ভিডিও নেই</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">নতুন ভিডিও যোগ করুন</span><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="form-group"><label>YouTube URL *</label><input type="text" name="youtube_url" class="form-control" required placeholder="https://www.youtube.com/watch?v=..."/></div>
+      <div class="form-row">
+        <div class="form-group"><label>শিরোনাম *</label><input type="text" name="title" class="form-control" required /></div>
+        <div class="form-group"><label>ট্যাগ *</label><input type="text" name="tag" class="form-control" required placeholder="গর্ভাবস্থা"/></div>
+      </div>
+      <div class="form-group"><label>ক্রম</label><input type="number" name="order" class="form-control" value="0"/></div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">ভিডিও সম্পাদনা করুন</span><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="pk" id="editPk">
+      <div class="form-group"><label>YouTube URL</label><input type="text" name="youtube_url" id="editUrl" class="form-control"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>শিরোনাম</label><input type="text" name="title" id="editTitle" class="form-control"/></div>
+        <div class="form-group"><label>ট্যাগ</label><input type="text" name="tag" id="editTag" class="form-control"/></div>
+      </div>
+      <div class="form-group"><label>ক্রম</label><input type="number" name="order" id="editOrder" class="form-control"/></div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> আপডেট করুন</button>
+    </form>
+  </div>
+</div>
+<script>
+function openEdit(pk,url,title,tag,order){
+  document.getElementById('editPk').value=pk;
+  document.getElementById('editUrl').value=url;
+  document.getElementById('editTitle').value=title;
+  document.getElementById('editTag').value=tag;
+  document.getElementById('editOrder').value=order;
+  openModal('editModal');
+}
+</script>
+{% endblock %}

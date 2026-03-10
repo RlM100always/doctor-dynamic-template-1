@@ -1,0 +1,161 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}সাইট সেটিংস{% endblock %}
+{% block page_title %}সাইট সেটিংস{% endblock %}
+{% block nav_settings %}active{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-cog" style="color:#2e7d32"></i> ডাক্তারের প্রোফাইল ও সাইট সেটিংস</span>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h4 style="margin-bottom:14px;color:#2e7d32;font-size:14px;border-bottom:2px solid #e8f5e9;padding-bottom:8px">
+      <i class="fas fa-user-md"></i> ডাক্তারের তথ্য
+    </h4>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ডাক্তারের নাম (বাংলা)</label>
+        <input type="text" name="doctor_name" value="{{ obj.doctor_name }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>ডাক্তারের নাম (ইংরেজি)</label>
+        <input type="text" name="doctor_name_en" value="{{ obj.doctor_name_en }}" class="form-control"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>বিশেষত্ব</label>
+        <input type="text" name="specialty" value="{{ obj.specialty }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>ডিগ্রি (হেডারে দেখাবে)</label>
+        <input type="text" name="degrees" value="{{ obj.degrees }}" class="form-control"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>পরিচয় (বায়ো)</label>
+      <textarea name="bio" class="form-control" rows="4">{{ obj.bio }}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>প্রোফাইল ছবি আপলোড</label>
+        <input type="file" name="profile_photo" class="form-control" accept="image/*"/>
+      </div>
+      <div class="form-group">
+        <label>প্রোফাইল ছবি URL (বিকল্প)</label>
+        <input type="url" name="profile_photo_url" value="{{ obj.profile_photo_url }}" class="form-control"/>
+      </div>
+    </div>
+    {% if obj.get_profile_photo %}
+    <div style="margin-bottom:16px">
+      <img src="{{ obj.get_profile_photo }}" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid #e8f5e9">
+    </div>
+    {% endif %}
+
+    <h4 style="margin:16px 0 14px;color:#2e7d32;font-size:14px;border-bottom:2px solid #e8f5e9;padding-bottom:8px">
+      <i class="fas fa-chart-bar"></i> পরিসংখ্যান
+    </h4>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label>বছরের অভিজ্ঞতা</label>
+        <input type="number" name="years_experience" value="{{ obj.years_experience }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>সফল প্রসব</label>
+        <input type="number" name="successful_deliveries" value="{{ obj.successful_deliveries }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>গবেষণাপত্র</label>
+        <input type="number" name="research_papers" value="{{ obj.research_papers }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>গুগল রেটিং</label>
+        <input type="number" name="google_rating" value="{{ obj.google_rating }}" step="0.1" min="0" max="5" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>গুগল রিভিউ সংখ্যা</label>
+        <input type="number" name="google_review_count" value="{{ obj.google_review_count }}" class="form-control"/>
+      </div>
+    </div>
+
+    <h4 style="margin:16px 0 14px;color:#2e7d32;font-size:14px;border-bottom:2px solid #e8f5e9;padding-bottom:8px">
+      <i class="fas fa-phone-alt"></i> যোগাযোগ তথ্য
+    </h4>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ফোন নম্বর (প্রদর্শন)</label>
+        <input type="text" name="phone" value="{{ obj.phone }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>ফোন নম্বর (কল লিংক)</label>
+        <input type="text" name="phone_raw" value="{{ obj.phone_raw }}" class="form-control" placeholder="+8801811223344"/>
+      </div>
+      <div class="form-group">
+        <label>হোয়াটসঅ্যাপ নম্বর</label>
+        <input type="text" name="whatsapp" value="{{ obj.whatsapp }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>ইমেইল</label>
+        <input type="email" name="email" value="{{ obj.email }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>ফেসবুক URL</label>
+        <input type="url" name="facebook_url" value="{{ obj.facebook_url }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>ইউটিউব URL</label>
+        <input type="url" name="youtube_url" value="{{ obj.youtube_url }}" class="form-control"/>
+      </div>
+    </div>
+
+    <h4 style="margin:16px 0 14px;color:#2e7d32;font-size:14px;border-bottom:2px solid #e8f5e9;padding-bottom:8px">
+      <i class="fas fa-mobile-alt"></i> পেমেন্ট ও বুকিং
+    </h4>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label>বুকিং ফি (টাকা)</label>
+        <input type="number" name="booking_fee" value="{{ obj.booking_fee }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>bKash নম্বর</label>
+        <input type="text" name="bkash_number" value="{{ obj.bkash_number }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>Nagad নম্বর</label>
+        <input type="text" name="nagad_number" value="{{ obj.nagad_number }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+        <label>Rocket নম্বর</label>
+        <input type="text" name="rocket_number" value="{{ obj.rocket_number }}" class="form-control"/>
+      </div>
+    </div>
+
+    <h4 style="margin:16px 0 14px;color:#2e7d32;font-size:14px;border-bottom:2px solid #e8f5e9;padding-bottom:8px">
+      <i class="fas fa-map-marker-alt"></i> ম্যাপ ও SEO
+    </h4>
+    <div class="form-group">
+      <label>গুগল ম্যাপ Embed URL</label>
+      <textarea name="map_embed_url" class="form-control" rows="3" placeholder="https://www.google.com/maps/embed?...">{{ obj.map_embed_url }}</textarea>
+    </div>
+    <div class="form-group">
+      <label>গুগল ম্যাপ লিংক</label>
+      <input type="url" name="maps_link" value="{{ obj.maps_link }}" class="form-control"/>
+    </div>
+    <div class="form-group">
+      <label>মেটা টাইটেল</label>
+      <input type="text" name="meta_title" value="{{ obj.meta_title }}" class="form-control"/>
+    </div>
+    <div class="form-group">
+      <label>মেটা বিবরণ</label>
+      <textarea name="meta_description" class="form-control" rows="2">{{ obj.meta_description }}</textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="padding:11px 28px;font-size:15px">
+      <i class="fas fa-save"></i> সেটিংস সংরক্ষণ করুন
+    </button>
+  </form>
+</div>
+{% endblock %}

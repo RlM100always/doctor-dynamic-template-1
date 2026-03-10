@@ -1,0 +1,215 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}ব্লগ পোস্ট{% endblock %}
+{% block page_title %}ব্লগ পোস্ট ব্যবস্থাপনা{% endblock %}
+{% block nav_blogs %}active{% endblock %}
+{% block content %}
+
+<!-- CKEditor 4 Full Build -->
+<script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
+
+<!-- ✅ THE FIX: escapejs stores real HTML in a JS object — no Django auto-escaping issue -->
+<script>
+var BLOG_CONTENTS = {
+  {% for item in items %}
+  "{{ item.pk }}": "{{ item.full_content|default:''|escapejs }}"{% if not forloop.last %},{% endif %}
+  {% endfor %}
+};
+</script>
+
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-blog" style="color:#2e7d32"></i> ব্লগ পোস্টসমূহ</span>
+    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন পোস্ট লিখুন</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>#</th><th>ক্যাটাগরি</th><th>শিরোনাম</th><th>বড় কার্ড</th><th>অবস্থা</th><th>তারিখ</th><th>কার্যক্রম</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.pk }}</td>
+          <td><span class="badge badge-info"><i class="{{ item.icon_class }}"></i> {{ item.category }}</span></td>
+          <td><strong>{{ item.title|truncatechars:50 }}</strong></td>
+          <td>{% if item.is_large %}<span class="badge badge-warning">বড়</span>{% else %}—{% endif %}</td>
+          <td>{% if item.is_active %}<span class="badge badge-success">প্রকাশিত</span>{% else %}<span class="badge badge-secondary">খসড়া</span>{% endif %}</td>
+          <td><small class="text-muted">{{ item.created_at|date:"d/m/Y" }}</small></td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-warning btn-sm btn-icon"
+                onclick="openEdit(
+                  {{ item.pk }},
+                  '{{ item.icon_class|escapejs }}',
+                  '{{ item.category|escapejs }}',
+                  '{{ item.title|escapejs }}',
+                  '{{ item.excerpt|escapejs }}',
+                  {{ item.is_large|yesno:'true,false' }},
+                  {{ item.order }}
+                )">
+                <i class="fas fa-edit"></i>
+              </button>
+              <form method="POST" style="display:inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle">
+                <input type="hidden" name="pk" value="{{ item.pk }}">
+                <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="প্রকাশ/খসড়া">
+                  <i class="fas fa-eye{% if not item.is_active %}-slash{% endif %}"></i>
+                </button>
+              </form>
+              <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="pk" value="{{ item.pk }}">
+                <button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7"><div class="empty-state"><i class="fas fa-blog"></i><p>কোনো ব্লগ পোস্ট নেই</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box" style="max-width:760px">
+    <div class="modal-header">
+      <span class="modal-title">নতুন ব্লগ পোস্ট লিখুন</span>
+      <button class="modal-close" onclick="closeModal('addModal')">×</button>
+    </div>
+    <form method="POST" id="addForm">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="form-row">
+        <div class="form-group">
+          <label>আইকন ক্লাস</label>
+          <input type="text" name="icon_class" class="form-control" value="fas fa-baby"/>
+        </div>
+        <div class="form-group">
+          <label>ক্যাটাগরি *</label>
+          <input type="text" name="category" class="form-control" required placeholder="গর্ভাবস্থা"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>শিরোনাম *</label>
+        <input type="text" name="title" class="form-control" required />
+      </div>
+      <div class="form-group">
+        <label>সংক্ষিপ্তসার *</label>
+        <textarea name="excerpt" class="form-control" rows="3" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>সম্পূর্ণ বিষয়বস্তু</label>
+        <textarea name="full_content" id="addFullContent" class="form-control" rows="10"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>ক্রম</label>
+          <input type="number" name="order" class="form-control" value="0"/>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end">
+          <div class="checkbox-group">
+            <input type="checkbox" name="is_large" id="addLarge">
+            <label for="addLarge">বড় ফিচার কার্ড</label>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> প্রকাশ করুন</button>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box" style="max-width:760px">
+    <div class="modal-header">
+      <span class="modal-title">পোস্ট সম্পাদনা করুন</span>
+      <button class="modal-close" onclick="closeModal('editModal')">×</button>
+    </div>
+    <form method="POST" id="editForm">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="pk" id="editPk">
+      <div class="form-row">
+        <div class="form-group"><label>আইকন ক্লাস</label><input type="text" name="icon_class" id="editIcon" class="form-control"/></div>
+        <div class="form-group"><label>ক্যাটাগরি</label><input type="text" name="category" id="editCat" class="form-control"/></div>
+      </div>
+      <div class="form-group"><label>শিরোনাম</label><input type="text" name="title" id="editTitle" class="form-control"/></div>
+      <div class="form-group"><label>সংক্ষিপ্তসার</label><textarea name="excerpt" id="editExcerpt" class="form-control" rows="3"></textarea></div>
+      <div class="form-group">
+        <label>সম্পূর্ণ বিষয়বস্তু</label>
+        <textarea name="full_content" id="editFullContent" class="form-control" rows="10"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ক্রম</label><input type="number" name="order" id="editOrder" class="form-control"/></div>
+        <div class="form-group" style="display:flex;align-items:flex-end">
+          <div class="checkbox-group"><input type="checkbox" name="is_large" id="editLarge"><label for="editLarge">বড় কার্ড</label></div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> আপডেট করুন</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const CK4_CONFIG = {
+  height: 350,
+  extraPlugins: 'colorbutton,font,justify,showblocks,specialchar',
+  toolbar: [
+    { name: 'document',    items: ['Source', '-', 'NewPage', 'Preview', 'Print'] },
+    { name: 'clipboard',   items: ['Cut','Copy','Paste','PasteText','PasteFromWord','-','Undo','Redo'] },
+    { name: 'editing',     items: ['Find','Replace','-','SelectAll'] },
+    '/',
+    { name: 'basicstyles', items: ['Bold','Italic','Underline','Strike','Subscript','Superscript','-','RemoveFormat'] },
+    { name: 'paragraph',   items: ['NumberedList','BulletedList','-','Outdent','Indent','-','Blockquote','-','JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock'] },
+    { name: 'links',       items: ['Link','Unlink','Anchor'] },
+    { name: 'insert',      items: ['Image','Table','HorizontalRule','SpecialChar'] },
+    '/',
+    { name: 'styles',      items: ['Styles','Format','Font','FontSize'] },
+    { name: 'colors',      items: ['TextColor','BGColor'] },
+    { name: 'tools',       items: ['Maximize','ShowBlocks'] }
+  ]
+};
+
+window.addEventListener('load', function () {
+  CKEDITOR.replace('addFullContent', CK4_CONFIG);
+  CKEDITOR.replace('editFullContent', CK4_CONFIG);
+
+  document.getElementById('addForm').addEventListener('submit', function () {
+    CKEDITOR.instances['addFullContent'] && CKEDITOR.instances['addFullContent'].updateElement();
+  });
+  document.getElementById('editForm').addEventListener('submit', function () {
+    CKEDITOR.instances['editFullContent'] && CKEDITOR.instances['editFullContent'].updateElement();
+  });
+});
+
+function openEdit(pk, icon, cat, title, excerpt, isLarge, order) {
+  document.getElementById('editPk').value      = pk;
+  document.getElementById('editIcon').value    = icon;
+  document.getElementById('editCat').value     = cat;
+  document.getElementById('editTitle').value   = title;
+  document.getElementById('editExcerpt').value = excerpt;
+  document.getElementById('editLarge').checked = isLarge;
+  document.getElementById('editOrder').value   = order;
+
+  // ✅ Read from BLOG_CONTENTS JS object — real HTML, no escaping issue
+  var html = BLOG_CONTENTS[pk] || '';
+
+  var ck = CKEDITOR.instances['editFullContent'];
+  if (ck) {
+    ck.setData(html);
+  } else {
+    document.getElementById('editFullContent').value = html;
+  }
+
+  openModal('editModal');
+}
+</script>
+
+{% endblock %}

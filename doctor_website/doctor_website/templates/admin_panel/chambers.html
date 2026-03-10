@@ -1,0 +1,111 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}চেম্বার{% endblock %}
+{% block page_title %}চেম্বার ব্যবস্থাপনা{% endblock %}
+{% block nav_chambers %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-hospital-alt" style="color:#2e7d32"></i> চেম্বারসমূহ</span>
+    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন চেম্বার যোগ করুন</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="tbl">
+    <thead><tr><th>#</th><th>ব্যাজ</th><th>নাম</th><th>ঠিকানা</th><th>সময়সূচি</th><th>ফোন</th><th>কার্যক্রম</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.pk }}</td>
+        <td><span class="badge {% if item.is_amber %}badge-warning{% else %}badge-success{% endif %}">{{ item.badge }}</span></td>
+        <td><strong>{{ item.name }}</strong><br><small class="text-muted">{{ item.area }}</small></td>
+        <td><small>{{ item.address }}</small></td>
+        <td><small>{{ item.schedule }}<br>{{ item.closed_days }}</small></td>
+        <td><a href="tel:{{ item.phone_raw }}">{{ item.phone }}</a></td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-warning btn-sm btn-icon" onclick="openEdit({{ item.pk }},'{{ item.badge|escapejs }}','{{ item.name|escapejs }}','{{ item.area|escapejs }}','{{ item.address|escapejs }}','{{ item.schedule|escapejs }}','{{ item.closed_days|escapejs }}','{{ item.phone|escapejs }}','{{ item.phone_raw|escapejs }}','{{ item.icon_class|escapejs }}',{{ item.is_amber|yesno:'true,false' }},{{ item.order }})"><i class="fas fa-edit"></i></button>
+            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7"><div class="empty-state"><i class="fas fa-hospital"></i><p>কোনো চেম্বার নেই</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box" style="max-width:700px">
+    <div class="modal-header"><span class="modal-title">নতুন চেম্বার যোগ করুন</span><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="form-row">
+        <div class="form-group"><label>ব্যাজ লেখা</label><input type="text" name="badge" class="form-control" value="প্রধান চেম্বার"/></div>
+        <div class="form-group"><label>চেম্বারের নাম *</label><input type="text" name="name" class="form-control" required /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>এলাকা</label><input type="text" name="area" class="form-control" placeholder="ঢাকা – মিরপুর"/></div>
+        <div class="form-group"><label>আইকন ক্লাস</label><input type="text" name="icon_class" class="form-control" value="fas fa-hospital-alt"/></div>
+      </div>
+      <div class="form-group"><label>সম্পূর্ণ ঠিকানা *</label><input type="text" name="address" class="form-control" required /></div>
+      <div class="form-row">
+        <div class="form-group"><label>সময়সূচি</label><input type="text" name="schedule" class="form-control" placeholder="বিকাল ৫ টা – রাত ৯ টা"/></div>
+        <div class="form-group"><label>বন্ধের দিন</label><input type="text" name="closed_days" class="form-control" placeholder="শুক্রবার: বন্ধ"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ফোন (প্রদর্শন)</label><input type="text" name="phone" class="form-control" /></div>
+        <div class="form-group"><label>ফোন (কল লিংক)</label><input type="text" name="phone_raw" class="form-control" placeholder="+8801811223344"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ক্রম</label><input type="number" name="order" class="form-control" value="0"/></div>
+        <div class="form-group" style="display:flex;align-items:flex-end"><div class="checkbox-group"><input type="checkbox" name="is_amber" id="addAmber"><label for="addAmber">অ্যাম্বার রং (সকালের চেম্বার)</label></div></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box" style="max-width:700px">
+    <div class="modal-header"><span class="modal-title">চেম্বার সম্পাদনা করুন</span><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="pk" id="editPk">
+      <div class="form-row">
+        <div class="form-group"><label>ব্যাজ</label><input type="text" name="badge" id="editBadge" class="form-control"/></div>
+        <div class="form-group"><label>নাম</label><input type="text" name="name" id="editName" class="form-control"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>এলাকা</label><input type="text" name="area" id="editArea" class="form-control"/></div>
+        <div class="form-group"><label>আইকন ক্লাস</label><input type="text" name="icon_class" id="editIcon" class="form-control"/></div>
+      </div>
+      <div class="form-group"><label>ঠিকানা</label><input type="text" name="address" id="editAddr" class="form-control"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>সময়সূচি</label><input type="text" name="schedule" id="editSched" class="form-control"/></div>
+        <div class="form-group"><label>বন্ধের দিন</label><input type="text" name="closed_days" id="editClosed" class="form-control"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ফোন</label><input type="text" name="phone" id="editPhone" class="form-control"/></div>
+        <div class="form-group"><label>ফোন (কল)</label><input type="text" name="phone_raw" id="editPhoneRaw" class="form-control"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ক্রম</label><input type="number" name="order" id="editOrder" class="form-control"/></div>
+        <div class="form-group" style="display:flex;align-items:flex-end"><div class="checkbox-group"><input type="checkbox" name="is_amber" id="editAmber"><label for="editAmber">অ্যাম্বার রং</label></div></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> আপডেট করুন</button>
+    </form>
+  </div>
+</div>
+<script>
+function openEdit(pk,badge,name,area,addr,sched,closed,phone,phoneRaw,icon,isAmber,order){
+  document.getElementById('editPk').value=pk;
+  document.getElementById('editBadge').value=badge;
+  document.getElementById('editName').value=name;
+  document.getElementById('editArea').value=area;
+  document.getElementById('editAddr').value=addr;
+  document.getElementById('editSched').value=sched;
+  document.getElementById('editClosed').value=closed;
+  document.getElementById('editPhone').value=phone;
+  document.getElementById('editPhoneRaw').value=phoneRaw;
+  document.getElementById('editIcon').value=icon;
+  document.getElementById('editAmber').checked=isAmber;
+  document.getElementById('editOrder').value=order;
+  openModal('editModal');
+}
+</script>
+{% endblock %}

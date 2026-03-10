@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>অ্যাডমিন লগইন — ডাক্তার ওয়েবসাইট</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #1a2332 0%, #2e4057 100%);
+    }
+    .login-box {
+      background: #fff; border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    .login-logo {
+      text-align: center; margin-bottom: 28px;
+    }
+    .login-logo .icon {
+      width: 64px; height: 64px; background: #2e7d32; border-radius: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 24px; color: #fff; font-weight: 800; margin-bottom: 12px;
+    }
+    .login-logo h2 { font-size: 20px; color: #1a2332; font-weight: 700; }
+    .login-logo p { font-size: 13px; color: #888; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 7px; }
+    .input-wrap { position: relative; }
+    .input-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; }
+    .input-wrap input {
+      width: 100%; padding: 11px 13px 11px 36px; border: 1.5px solid #ddd;
+      border-radius: 9px; font-size: 14px; transition: border-color .2s;
+    }
+    .input-wrap input:focus { outline: none; border-color: #2e7d32; }
+    .btn-login {
+      width: 100%; padding: 12px; background: #2e7d32; color: #fff; border: none;
+      border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: background .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-login:hover { background: #43a047; }
+    .alert-error {
+      background: #ffebee; color: #c62828; border: 1px solid #ffcdd2;
+      padding: 11px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 13px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .back-link { text-align: center; margin-top: 16px; }
+    .back-link a { color: #2e7d32; text-decoration: none; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">ডা·স</div>
+      <h2>অ্যাডমিন প্যানেল</h2>
+      <p>ডাক্তারের নিয়ন্ত্রণ কেন্দ্র</p>
+    </div>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert-error"><i class="fas fa-exclamation-circle"></i> {{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>ব্যবহারকারী নাম</label>
+        <div class="input-wrap">
+          <i class="fas fa-user"></i>
+          <input type="text" name="username" placeholder="Username" required autofocus/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>পাসওয়ার্ড</label>
+        <div class="input-wrap">
+          <i class="fas fa-lock"></i>
+          <input type="password" name="password" placeholder="Password" required/>
+        </div>
+      </div>
+      <button type="submit" class="btn-login">
+        <i class="fas fa-sign-in-alt"></i> লগইন করুন
+      </button>
+    </form>
+    <div class="back-link"><a href="/"><i class="fas fa-arrow-left"></i> সাইটে ফিরুন</a></div>
+  </div>
+</body>
+</html>

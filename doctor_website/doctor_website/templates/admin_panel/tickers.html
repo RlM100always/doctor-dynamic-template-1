@@ -1,0 +1,43 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}টিকার বার্তা{% endblock %}
+{% block page_title %}টিকার বার্তা{% endblock %}
+{% block nav_tickers %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-bullhorn" style="color:#2e7d32"></i> টিকার বার্তা</span>
+    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন যোগ করুন</button>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>#</th><th>বার্তা</th><th>ক্রম</th><th>অবস্থা</th><th>কার্যক্রম</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.pk }}</td>
+        <td>{{ item.message }}</td>
+        <td>{{ item.order }}</td>
+        <td>{% if item.is_active %}<span class="badge badge-success">সক্রিয়</span>{% else %}<span class="badge badge-secondary">নিষ্ক্রিয়</span>{% endif %}</td>
+        <td>
+          <div class="action-buttons">
+            <form method="POST" style="display:inline">{% csrf_token %}<input type="hidden" name="action" value="toggle"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-secondary btn-sm btn-icon" title="চালু/বন্ধ"><i class="fas fa-toggle-on"></i></button></form>
+            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5"><div class="empty-state"><i class="fas fa-bullhorn"></i><p>কোনো টিকার নেই</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">নতুন টিকার যোগ করুন</span><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="form-group"><label>বার্তা</label><input type="text" name="message" class="form-control" required placeholder="শুক্রবার চেম্বার বন্ধ..." /></div>
+      <div class="form-group"><label>ক্রম নম্বর</label><input type="number" name="order" class="form-control" value="0"/></div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

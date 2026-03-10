@@ -1,0 +1,94 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}সনদপত্র{% endblock %}
+{% block page_title %}সনদপত্র ও অ্যাফিলিয়েশন{% endblock %}
+{% block nav_certificates %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-scroll" style="color:#2e7d32"></i> সনদপত্রসমূহ</span>
+    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন সনদ যোগ করুন</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="tbl">
+    <thead><tr><th>#</th><th>নম্বর</th><th>শিরোনাম</th><th>বিবরণ</th><th>লিংক</th><th>ক্রম</th><th>কার্যক্রম</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.pk }}</td>
+        <td><span class="badge {% if item.is_amber %}badge-warning{% else %}badge-success{% endif %}">{{ item.number }}</span></td>
+        <td><i class="{{ item.icon_class }}" style="color:#2e7d32"></i> <strong>{{ item.title }}</strong></td>
+        <td><small>{{ item.description|truncatechars:50 }}</small></td>
+        <td><small><a href="{{ item.link_url }}" target="_blank">{{ item.link_text }}</a></small></td>
+        <td>{{ item.order }}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-warning btn-sm btn-icon" onclick="openEdit({{ item.pk }},'{{ item.number|escapejs }}','{{ item.icon_class|escapejs }}','{{ item.title|escapejs }}','{{ item.description|escapejs }}','{{ item.link_text|escapejs }}','{{ item.link_url|escapejs }}',{{ item.is_amber|yesno:'true,false' }},{{ item.order }})"><i class="fas fa-edit"></i></button>
+            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7"><div class="empty-state"><i class="fas fa-scroll"></i><p>কোনো সনদ নেই</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">নতুন সনদ যোগ করুন</span><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="form-row">
+        <div class="form-group"><label>নম্বর (০১, ০২...)</label><input type="text" name="number" class="form-control" value="01"/></div>
+        <div class="form-group"><label>আইকন ক্লাস</label><input type="text" name="icon_class" class="form-control" value="fas fa-scroll"/></div>
+      </div>
+      <div class="form-group"><label>শিরোনাম *</label><input type="text" name="title" class="form-control" required /></div>
+      <div class="form-group"><label>বিবরণ *</label><textarea name="description" class="form-control" rows="3" required></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>লিংক টেক্সট</label><input type="text" name="link_text" class="form-control" value="সনদ যাচাই করুন"/></div>
+        <div class="form-group"><label>লিংক URL</label><input type="url" name="link_url" class="form-control"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ক্রম</label><input type="number" name="order" class="form-control" value="0"/></div>
+        <div class="form-group" style="display:flex;align-items:flex-end"><div class="checkbox-group"><input type="checkbox" name="is_amber" id="addAmber"><label for="addAmber">অ্যাম্বার রং</label></div></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">সনদ সম্পাদনা করুন</span><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="pk" id="editPk">
+      <div class="form-row">
+        <div class="form-group"><label>নম্বর</label><input type="text" name="number" id="editNum" class="form-control"/></div>
+        <div class="form-group"><label>আইকন</label><input type="text" name="icon_class" id="editIcon" class="form-control"/></div>
+      </div>
+      <div class="form-group"><label>শিরোনাম</label><input type="text" name="title" id="editTitle" class="form-control"/></div>
+      <div class="form-group"><label>বিবরণ</label><textarea name="description" id="editDesc" class="form-control" rows="3"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>লিংক টেক্সট</label><input type="text" name="link_text" id="editLinkText" class="form-control"/></div>
+        <div class="form-group"><label>লিংক URL</label><input type="url" name="link_url" id="editLinkUrl" class="form-control"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ক্রম</label><input type="number" name="order" id="editOrder" class="form-control"/></div>
+        <div class="form-group" style="display:flex;align-items:flex-end"><div class="checkbox-group"><input type="checkbox" name="is_amber" id="editAmber"><label for="editAmber">অ্যাম্বার রং</label></div></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> আপডেট করুন</button>
+    </form>
+  </div>
+</div>
+<script>
+function openEdit(pk,num,icon,title,desc,linkText,linkUrl,isAmber,order){
+  document.getElementById('editPk').value=pk;
+  document.getElementById('editNum').value=num;
+  document.getElementById('editIcon').value=icon;
+  document.getElementById('editTitle').value=title;
+  document.getElementById('editDesc').value=desc;
+  document.getElementById('editLinkText').value=linkText;
+  document.getElementById('editLinkUrl').value=linkUrl;
+  document.getElementById('editAmber').checked=isAmber;
+  document.getElementById('editOrder').value=order;
+  openModal('editModal');
+}
+</script>
+{% endblock %}

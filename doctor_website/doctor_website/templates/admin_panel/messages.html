@@ -1,0 +1,41 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}বার্তা{% endblock %}
+{% block page_title %}যোগাযোগ বার্তাসমূহ{% endblock %}
+{% block nav_messages %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-envelope" style="color:#e53935"></i> বার্তাসমূহ</span>
+  </div>
+  {% if messages_list %}
+  <div style="overflow-x:auto">
+  <table class="tbl">
+    <thead><tr><th>#</th><th>নাম</th><th>ফোন</th><th>ইমেইল</th><th>বার্তা</th><th>তারিখ</th><th>অবস্থা</th><th>কার্যক্রম</th></tr></thead>
+    <tbody>
+      {% for msg in messages_list %}
+      <tr {% if not msg.is_read %}style="background:#fffde7;font-weight:600"{% endif %}>
+        <td>{{ msg.pk }}</td>
+        <td>{{ msg.name }}</td>
+        <td><a href="tel:{{ msg.phone }}">{{ msg.phone }}</a></td>
+        <td><small>{{ msg.email|default:"—" }}</small></td>
+        <td><small>{{ msg.message|truncatechars:80 }}</small></td>
+        <td><small class="text-muted">{{ msg.created_at|date:"d/m/Y H:i" }}</small></td>
+        <td>{% if msg.is_read %}<span class="badge badge-success">পড়া</span>{% else %}<span class="badge badge-warning">অপঠিত</span>{% endif %}</td>
+        <td>
+          <div class="action-buttons">
+            {% if not msg.is_read %}
+            <form method="POST" style="display:inline">{% csrf_token %}<input type="hidden" name="action" value="read"><input type="hidden" name="pk" value="{{ msg.pk }}"><button type="submit" class="btn btn-secondary btn-sm btn-icon" title="পড়া হিসেবে চিহ্নিত করুন"><i class="fas fa-check"></i></button></form>
+            {% endif %}
+            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ msg.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="fas fa-envelope"></i><p>কোনো বার্তা নেই।</p></div>
+  {% endif %}
+</div>
+{% endblock %}

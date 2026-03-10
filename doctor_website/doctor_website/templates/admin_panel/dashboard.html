@@ -1,0 +1,102 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}ড্যাশবোর্ড{% endblock %}
+{% block page_title %}ড্যাশবোর্ড{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+    <div class="stat-info"><p>{{ total_appointments }}</p><span>মোট অ্যাপয়েন্টমেন্ট</span></div>
+  </div>
+  <div class="stat-card stat-card--amber">
+    <div class="stat-icon stat-icon--amber"><i class="fas fa-clock"></i></div>
+    <div class="stat-info"><p>{{ pending_appointments }}</p><span>অপেক্ষমাণ</span></div>
+  </div>
+  <div class="stat-card" style="border-left-color:#1976d2">
+    <div class="stat-icon stat-icon--blue"><i class="fas fa-check-circle"></i></div>
+    <div class="stat-info"><p>{{ confirmed_appointments }}</p><span>নিশ্চিত</span></div>
+  </div>
+  <div class="stat-card stat-card--red">
+    <div class="stat-icon stat-icon--red"><i class="fas fa-envelope"></i></div>
+    <div class="stat-info"><p>{{ unread_messages }}</p><span>অপঠিত বার্তা</span></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-star"></i></div>
+    <div class="stat-info"><p>{{ total_reviews }}</p><span>রিভিউ</span></div>
+  </div>
+  <div class="stat-card" style="border-left-color:#9c27b0">
+    <div class="stat-icon" style="background:#f3e5f5;color:#9c27b0"><i class="fas fa-blog"></i></div>
+    <div class="stat-info"><p>{{ total_blogs }}</p><span>ব্লগ পোস্ট</span></div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex-wrap:wrap">
+  <div class="card">
+    <div class="card__header">
+      <span class="card__title"><i class="fas fa-calendar-check" style="color:#2e7d32"></i> সাম্প্রতিক অ্যাপয়েন্টমেন্ট</span>
+      <a href="{% url 'admin_appointments' %}" class="btn btn-primary btn-sm">সব দেখুন</a>
+    </div>
+    {% if recent_appointments %}
+    <table class="tbl">
+      <thead><tr><th>রোগী</th><th>তারিখ</th><th>স্ট্যাটাস</th></tr></thead>
+      <tbody>
+        {% for appt in recent_appointments %}
+        <tr>
+          <td><strong>{{ appt.patient_name }}</strong><br><small class="text-muted">{{ appt.phone }}</small></td>
+          <td>{{ appt.date }}</td>
+          <td><span class="badge {{ appt.get_status_badge_class }}">{{ appt.get_status_display }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><i class="fas fa-calendar"></i><p>কোনো অ্যাপয়েন্টমেন্ট নেই</p></div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card__header">
+      <span class="card__title"><i class="fas fa-envelope" style="color:#e53935"></i> সাম্প্রতিক বার্তা</span>
+      <a href="{% url 'admin_messages' %}" class="btn btn-primary btn-sm">সব দেখুন</a>
+    </div>
+    {% if recent_messages %}
+    <table class="tbl">
+      <thead><tr><th>প্রেরক</th><th>বার্তা</th><th>অবস্থা</th></tr></thead>
+      <tbody>
+        {% for msg in recent_messages %}
+        <tr>
+          <td><strong>{{ msg.name }}</strong><br><small class="text-muted">{{ msg.phone }}</small></td>
+          <td><small>{{ msg.message|truncatechars:50 }}</small></td>
+          <td>{% if msg.is_read %}<span class="badge badge-success">পড়া</span>{% else %}<span class="badge badge-warning">অপঠিত</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><i class="fas fa-envelope"></i><p>কোনো বার্তা নেই</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:0">
+  <div class="card__header"><span class="card__title">দ্রুত নেভিগেশন</span></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">
+
+{% for name, icon, title in links %}
+
+<a href="{% url name %}" 
+   class="btn btn-secondary"
+   style="justify-content:center;flex-direction:column;height:72px;gap:4px;font-size:12px">
+
+<i class="fas fa-{{ icon }}" style="font-size:18px;color:#2e7d32"></i>
+
+{{ title }}
+
+</a>
+
+{% endfor %}
+
+</div>
+</div>
+{% endblock %}

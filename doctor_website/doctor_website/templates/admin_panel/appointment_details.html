@@ -1,0 +1,90 @@
+<div class="details-container">
+  <div class="details-row">
+    <div class="details-label">আইডি:</div>
+    <div class="details-value">{{ appointment.pk }}</div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">রোগীর নাম:</div>
+    <div class="details-value">{{ appointment.patient_name }}</div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">ফোন নম্বর:</div>
+    <div class="details-value">
+      <a href="tel:{{ appointment.phone }}">{{ appointment.phone }}</a>
+    </div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">তারিখ:</div>
+    <div class="details-value">{{ appointment.date|date:"l, d F Y" }}</div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">সময়:</div>
+    <div class="details-value">{{ appointment.time_slot }}</div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">স্ট্যাটাস:</div>
+    <div class="details-value">
+      <span class="badge {{ appointment.get_status_badge_class }}">{{ appointment.get_status_display }}</span>
+    </div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">রোগীর বিবরণ:</div>
+    <div class="details-value">{{ appointment.note|linebreaks|default:"—" }}</div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">ডাক্তারের নোট:</div>
+    <div class="details-value">{{ appointment.admin_note|linebreaks|default:"—" }}</div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">নিবন্ধনের সময়:</div>
+    <div class="details-value">{{ appointment.created_at|date:"l, d F Y h:i A" }}</div>
+  </div>
+  
+  <div class="details-row">
+    <div class="details-label">সর্বশেষ আপডেট:</div>
+    <div class="details-value">{{ appointment.updated_at|date:"l, d F Y h:i A" }}</div>
+  </div>
+</div>
+
+<style>
+.details-container {
+  padding: 20px;
+}
+
+.details-row {
+  display: flex;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.details-label {
+  width: 150px;
+  font-weight: 600;
+  color: #555;
+}
+
+.details-value {
+  flex: 1;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .details-row {
+    flex-direction: column;
+  }
+  
+  .details-label {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+}
+</style>

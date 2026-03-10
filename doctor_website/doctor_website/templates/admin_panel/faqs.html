@@ -1,0 +1,66 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}FAQ{% endblock %}
+{% block page_title %}FAQ ব্যবস্থাপনা{% endblock %}
+{% block nav_faqs %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-question-circle" style="color:#2e7d32"></i> প্রশ্নোত্তর (FAQ)</span>
+    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন FAQ যোগ করুন</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="tbl">
+    <thead><tr><th>#</th><th>প্রশ্ন</th><th>উত্তর</th><th>ক্রম</th><th>অবস্থা</th><th>কার্যক্রম</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.pk }}</td>
+        <td>{{ item.question|truncatechars:60 }}</td>
+        <td><small>{{ item.answer|truncatechars:60 }}</small></td>
+        <td>{{ item.order }}</td>
+        <td>{% if item.is_active %}<span class="badge badge-success">সক্রিয়</span>{% else %}<span class="badge badge-secondary">লুকানো</span>{% endif %}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-warning btn-sm btn-icon" onclick="openEdit({{ item.pk }},'{{ item.question|escapejs }}','{{ item.answer|escapejs }}',{{ item.order }})"><i class="fas fa-edit"></i></button>
+            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6"><div class="empty-state"><i class="fas fa-question"></i><p>কোনো FAQ নেই</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">নতুন FAQ যোগ করুন</span><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="form-group"><label>প্রশ্ন *</label><input type="text" name="question" class="form-control" required /></div>
+      <div class="form-group"><label>উত্তর *</label><textarea name="answer" class="form-control" rows="4" required></textarea></div>
+      <div class="form-group"><label>ক্রম</label><input type="number" name="order" class="form-control" value="0"/></div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">FAQ সম্পাদনা করুন</span><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="pk" id="editPk">
+      <div class="form-group"><label>প্রশ্ন</label><input type="text" name="question" id="editQ" class="form-control"/></div>
+      <div class="form-group"><label>উত্তর</label><textarea name="answer" id="editA" class="form-control" rows="4"></textarea></div>
+      <div class="form-group"><label>ক্রম</label><input type="number" name="order" id="editOrder" class="form-control"/></div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> আপডেট করুন</button>
+    </form>
+  </div>
+</div>
+<script>
+function openEdit(pk,q,a,order){
+  document.getElementById('editPk').value=pk;
+  document.getElementById('editQ').value=q;
+  document.getElementById('editA').value=a;
+  document.getElementById('editOrder').value=order;
+  openModal('editModal');
+}
+</script>
+{% endblock %}

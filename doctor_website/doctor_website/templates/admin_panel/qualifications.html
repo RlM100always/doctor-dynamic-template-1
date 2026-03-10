@@ -1,0 +1,103 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}শিক্ষাগত যোগ্যতা{% endblock %}
+{% block page_title %}শিক্ষাগত যোগ্যতা ও প্রশিক্ষণ{% endblock %}
+{% block nav_qualifications %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-graduation-cap" style="color:#2e7d32"></i> যোগ্যতাসমূহ</span>
+    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন যোগ করুন</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="tbl">
+    <thead><tr><th>#</th><th>বছর</th><th>ডিগ্রি</th><th>প্রতিষ্ঠান</th><th>ধরন</th><th>ক্রম</th><th>কার্যক্রম</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.pk }}</td>
+        <td><strong>{{ item.year }}</strong></td>
+        <td>{{ item.degree }}</td>
+        <td><small>{{ item.institution }}</small></td>
+        <td>{{ item.get_entry_type_display }}</td>
+        <td>{{ item.order }}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-warning btn-sm btn-icon" onclick="openEdit({{ item.pk }},'{{ item.year|escapejs }}','{{ item.degree|escapejs }}','{{ item.institution|escapejs }}','{{ item.icon_class|escapejs }}','{{ item.entry_type }}',{{ item.order }})" title="সম্পাদনা"><i class="fas fa-edit"></i></button>
+            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7"><div class="empty-state"><i class="fas fa-graduation-cap"></i><p>কোনো যোগ্যতা নেই</p></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">নতুন যোগ্যতা যোগ করুন</span><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="form-row">
+        <div class="form-group"><label>বছর *</label><input type="text" name="year" class="form-control" placeholder="২০১০" required /></div>
+        <div class="form-group"><label>আইকন ক্লাস</label><input type="text" name="icon_class" class="form-control" value="fas fa-graduation-cap"/></div>
+      </div>
+      <div class="form-group"><label>ডিগ্রি/পদবি *</label><input type="text" name="degree" class="form-control" required /></div>
+      <div class="form-group"><label>প্রতিষ্ঠান *</label><input type="text" name="institution" class="form-control" required /></div>
+      <div class="form-row">
+        <div class="form-group"><label>ধরন</label>
+          <select name="entry_type" class="form-control">
+            <option value="degree">স্নাতক ডিগ্রি</option>
+            <option value="postgrad">পোস্ট-গ্র্যাজুয়েট</option>
+            <option value="international">আন্তর্জাতিক</option>
+            <option value="training">বিদেশী প্রশিক্ষণ</option>
+            <option value="current">বর্তমান পদ</option>
+          </select>
+        </div>
+        <div class="form-group"><label>ক্রম নম্বর</label><input type="number" name="order" class="form-control" value="0"/></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header"><span class="modal-title">যোগ্যতা সম্পাদনা করুন</span><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
+    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="pk" id="editPk">
+      <div class="form-row">
+        <div class="form-group"><label>বছর</label><input type="text" name="year" id="editYear" class="form-control"/></div>
+        <div class="form-group"><label>আইকন ক্লাস</label><input type="text" name="icon_class" id="editIcon" class="form-control"/></div>
+      </div>
+      <div class="form-group"><label>ডিগ্রি</label><input type="text" name="degree" id="editDegree" class="form-control"/></div>
+      <div class="form-group"><label>প্রতিষ্ঠান</label><input type="text" name="institution" id="editInst" class="form-control"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>ধরন</label>
+          <select name="entry_type" id="editType" class="form-control">
+            <option value="degree">স্নাতক ডিগ্রি</option>
+            <option value="postgrad">পোস্ট-গ্র্যাজুয়েট</option>
+            <option value="international">আন্তর্জাতিক</option>
+            <option value="training">বিদেশী প্রশিক্ষণ</option>
+            <option value="current">বর্তমান পদ</option>
+          </select>
+        </div>
+        <div class="form-group"><label>ক্রম নম্বর</label><input type="number" name="order" id="editOrder" class="form-control"/></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> আপডেট করুন</button>
+    </form>
+  </div>
+</div>
+<script>
+function openEdit(pk,year,degree,inst,icon,type,order){
+  document.getElementById('editPk').value=pk;
+  document.getElementById('editYear').value=year;
+  document.getElementById('editDegree').value=degree;
+  document.getElementById('editInst').value=inst;
+  document.getElementById('editIcon').value=icon;
+  document.getElementById('editType').value=type;
+  document.getElementById('editOrder').value=order;
+  openModal('editModal');
+}
+</script>
+{% endblock %}

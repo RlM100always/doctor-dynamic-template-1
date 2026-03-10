@@ -1,0 +1,494 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}অ্যাপয়েন্টমেন্ট{% endblock %}
+{% block page_title %}অ্যাপয়েন্টমেন্ট ব্যবস্থাপনা{% endblock %}
+{% block nav_appointments %}active{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-filter"></i> ফিল্টার অপশন</span>
+  </div>
+  <div class="filter-section">
+    <form method="GET" id="filterForm" class="filter-form">
+      <!-- Date Range Filter -->
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="date_range"><i class="fas fa-calendar-alt"></i> তারিখ রেঞ্জ:</label>
+          <select name="date_range" id="date_range" class="form-control" onchange="toggleCustomDate()">
+            <option value="">সব তারিখ</option>
+            <option value="today" {% if date_range == 'today' %}selected{% endif %}>আজ</option>
+            <option value="yesterday" {% if date_range == 'yesterday' %}selected{% endif %}>গতকাল</option>
+            <option value="last_week" {% if date_range == 'last_week' %}selected{% endif %}>গত সপ্তাহ</option>
+            <option value="last_month" {% if date_range == 'last_month' %}selected{% endif %}>গত মাস</option>
+            <option value="last_year" {% if date_range == 'last_year' %}selected{% endif %}>গত বছর</option>
+            <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>কাস্টম</option>
+          </select>
+        </div>
+        
+        <div class="filter-group custom-date" id="customDateRange" style="display: none;">
+          <label for="date_from">থেকে:</label>
+          <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
+          
+          <label for="date_to"> পর্যন্ত:</label>
+          <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
+        </div>
+      </div>
+
+      <!-- Search Filters -->
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="patient_name"><i class="fas fa-user"></i> রোগীর নাম:</label>
+          <input type="text" name="patient_name" id="patient_name" class="form-control" 
+                 placeholder="নাম লিখুন..." value="{{ patient_name }}">
+        </div>
+        
+        <div class="filter-group">
+          <label for="phone"><i class="fas fa-phone"></i> ফোন নম্বর:</label>
+          <input type="text" name="phone" id="phone" class="form-control" 
+                 placeholder="ফোন নম্বর..." value="{{ phone }}">
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="note_search"><i class="fas fa-sticky-note"></i> বিবরণে খুঁজুন:</label>
+          <input type="text" name="note_search" id="note_search" class="form-control" 
+                 placeholder="বিবরণের অংশ লিখুন..." value="{{ note_search }}">
+        </div>
+
+        <div class="filter-group">
+          <label for="registration_date"><i class="fas fa-calendar-check"></i> নিবন্ধনের তারিখ:</label>
+          <input type="date" name="registration_date" id="registration_date" class="form-control" 
+                 value="{{ registration_date }}">
+        </div>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="status"><i class="fas fa-tag"></i> স্ট্যাটাস:</label>
+          <select name="status" id="status" class="form-control">
+            <option value="">সব স্ট্যাটাস</option>
+            {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Filter Actions -->
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-search"></i> ফিল্টার প্রয়োগ করুন
+        </button>
+        <a href="{% url 'admin_appointments' %}" class="btn btn-secondary">
+          <i class="fas fa-undo"></i> রিসেট
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Appointments List -->
+<div class="card">
+  <div class="card__header">
+    <span class="card__title">
+      <i class="fas fa-calendar-check" style="color:#2e7d32"></i> 
+      সকল অ্যাপয়েন্টমেন্ট ({{ appointments|length }}টি)
+    </span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <!-- Export Buttons -->
+      <button onclick="exportToExcel()" class="btn btn-success btn-sm">
+        <i class="fas fa-file-excel"></i> এক্সপোর্ট
+      </button>
+      <button onclick="printTable()" class="btn btn-info btn-sm">
+        <i class="fas fa-print"></i> প্রিন্ট
+      </button>
+    </div>
+  </div>
+
+  {% if appointments %}
+  <div style="overflow-x:auto">
+    <table class="tbl" id="appointmentsTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>রোগীর নাম</th>
+          <th>ফোন</th>
+          <th>তারিখ</th>
+          <th>সময়</th>
+          <th>বিবরণ</th>
+          <th>স্ট্যাটাস</th>
+          <th>নিবন্ধন</th>
+          <th>ডাক্তারের নোট</th>
+          <th>কার্যক্রম</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for appt in appointments %}
+        <tr>
+          <td>{{ appt.pk }}</td>
+          <td><strong>{{ appt.patient_name }}</strong></td>
+          <td><a href="tel:{{ appt.phone }}">{{ appt.phone }}</a></td>
+          <td>{{ appt.date|date:"d/m/Y" }}</td>
+          <td>{{ appt.time_slot }}</td>
+          <td>
+            <small>{{ appt.note|truncatechars:40|default:"—" }}</small>
+            {% if appt.note|length > 40 %}
+            <button class="btn-link" onclick="showFullNote('{{ appt.note|escapejs }}')">আরও</button>
+            {% endif %}
+          </td>
+          <td><span class="badge {{ appt.get_status_badge_class }}">{{ appt.get_status_display }}</span></td>
+          <td><small class="text-muted">{{ appt.created_at|date:"d/m/Y H:i" }}</small></td>
+          <td>
+            <small class="text-muted">{{ appt.admin_note|truncatechars:20|default:"—" }}</small>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-warning btn-sm btn-icon" onclick="openEditModal({{ appt.pk }},'{{ appt.status }}','{{ appt.admin_note|escapejs }}')" title="সম্পাদনা">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-info btn-sm btn-icon" onclick="viewDetails({{ appt.pk }})" title="বিস্তারিত">
+                <i class="fas fa-eye"></i>
+              </button>
+              <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="pk" value="{{ appt.pk }}">
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="মুছুন"><i class="fas fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if appointments.paginator.num_pages > 1 %}
+  <div class="pagination">
+    <span class="step-links">
+      {% if appointments.has_previous %}
+        <a href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; প্রথম</a>
+        <a href="?page={{ appointments.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">পূর্ববর্তী</a>
+      {% endif %}
+
+      <span class="current">
+        পাতা {{ appointments.number }} of {{ appointments.paginator.num_pages }}
+      </span>
+
+      {% if appointments.has_next %}
+        <a href="?page={{ appointments.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">পরবর্তী</a>
+        <a href="?page={{ appointments.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">শেষ &raquo;</a>
+      {% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-calendar"></i>
+    <p>কোনো অ্যাপয়েন্টমেন্ট পাওয়া যায়নি।</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">অ্যাপয়েন্টমেন্ট আপডেট করুন</span>
+      <button class="modal-close" onclick="closeModal('editModal')">×</button>
+    </div>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="pk" id="editPk">
+      <input type="hidden" name="action" value="status">
+      <div class="form-group">
+        <label>স্ট্যাটাস পরিবর্তন করুন</label>
+        <select name="status" id="editStatus" class="form-control">
+          {% for val, label in status_choices %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">
+        <i class="fas fa-save"></i> স্ট্যাটাস সংরক্ষণ করুন
+      </button>
+    </form>
+    <div class="divider"></div>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="pk" id="editPk2">
+      <input type="hidden" name="action" value="note">
+      <div class="form-group">
+        <label>ডাক্তারের নোট (রোগী দেখবে না)</label>
+        <textarea name="admin_note" id="editNote" class="form-control" rows="3"></textarea>
+      </div>
+      <button type="submit" class="btn btn-secondary" style="width:100%">
+        <i class="fas fa-sticky-note"></i> নোট সংরক্ষণ করুন
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal-overlay" id="detailsModal">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <span class="modal-title">অ্যাপয়েন্টমেন্ট বিস্তারিত</span>
+      <button class="modal-close" onclick="closeModal('detailsModal')">×</button>
+    </div>
+    <div id="detailsContent" class="modal-body">
+      <!-- Content will be loaded via AJAX -->
+    </div>
+  </div>
+</div>
+
+<!-- Note Modal -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">সম্পূর্ণ বিবরণ</span>
+      <button class="modal-close" onclick="closeModal('noteModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="fullNoteText"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Toggle custom date fields
+function toggleCustomDate() {
+  const dateRange = document.getElementById('date_range').value;
+  const customDateDiv = document.getElementById('customDateRange');
+  customDateDiv.style.display = dateRange === 'custom' ? 'flex' : 'none';
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  toggleCustomDate();
+});
+
+// Modal functions
+function openModal(id) {
+  document.getElementById(id).style.display = 'flex';
+}
+
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function openEditModal(pk, status, note) {
+  document.getElementById('editPk').value = pk;
+  document.getElementById('editPk2').value = pk;
+  document.getElementById('editStatus').value = status;
+  document.getElementById('editNote').value = note;
+  openModal('editModal');
+}
+
+function showFullNote(note) {
+  document.getElementById('fullNoteText').innerText = note;
+  openModal('noteModal');
+}
+
+function viewDetails(pk) {
+  // Fetch details via AJAX
+  fetch(`/admin-panel/appointment-details/${pk}/`)
+    .then(response => response.text())
+    .then(html => {
+      document.getElementById('detailsContent').innerHTML = html;
+      openModal('detailsModal');
+    })
+    .catch(error => {
+      alert('বিস্তারিত তথ্য লোড করতে সমস্যা হয়েছে।');
+    });
+}
+
+// Export to Excel
+function exportToExcel() {
+  const table = document.getElementById('appointmentsTable');
+  const rows = table.querySelectorAll('tr');
+  const csv = [];
+  
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const cols = row.querySelectorAll('td, th');
+    const rowData = [];
+    
+    for (let j = 0; j < cols.length; j++) {
+      // Skip action buttons column
+      if (i > 0 && j === cols.length - 1) continue;
+      
+      let text = cols[j].innerText.replace(/,/g, ' ');
+      rowData.push(text);
+    }
+    
+    csv.push(rowData.join(','));
+  }
+  
+  const csvContent = csv.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'appointments.csv';
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+// Print table
+function printTable() {
+  const printContent = document.getElementById('appointmentsTable').cloneNode(true);
+  const originalContent = document.body.innerHTML;
+  
+  // Remove action buttons column for printing
+  printContent.querySelectorAll('tr').forEach(row => {
+    if (row.lastElementChild) {
+      row.removeChild(row.lastElementChild);
+    }
+  });
+  
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Appointments List</title>
+        <style>
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; }
+        </style>
+      </head>
+      <body>
+        ${printContent.outerHTML}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.print();
+}
+
+// Auto-submit form when date range changes
+document.getElementById('date_range').addEventListener('change', function() {
+  if (this.value !== 'custom') {
+    document.getElementById('filterForm').submit();
+  }
+});
+
+// Search on input with debounce
+let searchTimeout;
+document.querySelectorAll('#patient_name, #phone, #note_search').forEach(input => {
+  input.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      document.getElementById('filterForm').submit();
+    }, 500);
+  });
+});
+</script>
+
+<style>
+.filter-section {
+  padding: 20px;
+}
+
+.filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #555;
+  font-size: 0.9em;
+}
+
+.filter-group .form-control {
+  width: 100%;
+}
+
+.custom-date {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.custom-date .form-control {
+  flex: 1;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+.filter-actions .btn {
+  padding: 10px 20px;
+}
+
+.pagination {
+  padding: 20px;
+  text-align: center;
+}
+
+.pagination .step-links a {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 0 2px;
+  border: 1px solid #ddd;
+  text-decoration: none;
+  color: #333;
+}
+
+.pagination .step-links a:hover {
+  background-color: #f5f5f5;
+}
+
+.pagination .current {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 0 2px;
+  background-color: #2e7d32;
+  color: white;
+  border: 1px solid #2e7d32;
+}
+
+.modal-lg {
+  max-width: 800px;
+  width: 90%;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9em;
+}
+
+.btn-link:hover {
+  color: #0056b3;
+}
+</style>
+{% endblock %}
