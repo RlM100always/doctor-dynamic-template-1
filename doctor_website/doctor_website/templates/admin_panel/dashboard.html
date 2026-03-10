@@ -4,6 +4,7 @@
 {% block nav_dashboard %}active{% endblock %}
 
 {% block content %}
+<!-- stats grid - fully responsive -->
 <div class="stats-grid">
   <div class="stat-card">
     <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
@@ -31,72 +32,258 @@
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex-wrap:wrap">
-  <div class="card">
+<!-- recent appointments & messages - responsive grid -->
+<div class="dashboard-grid">
+  <!-- Recent appointments card -->
+  <div class="card dashboard-card">
     <div class="card__header">
       <span class="card__title"><i class="fas fa-calendar-check" style="color:#2e7d32"></i> সাম্প্রতিক অ্যাপয়েন্টমেন্ট</span>
       <a href="{% url 'admin_appointments' %}" class="btn btn-primary btn-sm">সব দেখুন</a>
     </div>
     {% if recent_appointments %}
-    <table class="tbl">
-      <thead><tr><th>রোগী</th><th>তারিখ</th><th>স্ট্যাটাস</th></tr></thead>
-      <tbody>
-        {% for appt in recent_appointments %}
-        <tr>
-          <td><strong>{{ appt.patient_name }}</strong><br><small class="text-muted">{{ appt.phone }}</small></td>
-          <td>{{ appt.date }}</td>
-          <td><span class="badge {{ appt.get_status_badge_class }}">{{ appt.get_status_display }}</span></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>রোগী</th>
+            <th>তারিখ</th>
+            <th>স্ট্যাটাস</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appt in recent_appointments %}
+          <tr>
+            <td>
+              <strong>{{ appt.patient_name }}</strong>
+              <div class="text-muted small">{{ appt.phone }}</div>
+            </td>
+            <td>{{ appt.date }}</td>
+            <td><span class="badge {{ appt.get_status_badge_class }}">{{ appt.get_status_display }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
-    <div class="empty-state"><i class="fas fa-calendar"></i><p>কোনো অ্যাপয়েন্টমেন্ট নেই</p></div>
+    <div class="empty-state">
+      <i class="fas fa-calendar"></i>
+      <p>কোনো অ্যাপয়েন্টমেন্ট নেই</p>
+    </div>
     {% endif %}
   </div>
 
-  <div class="card">
+  <!-- Recent messages card -->
+  <div class="card dashboard-card">
     <div class="card__header">
       <span class="card__title"><i class="fas fa-envelope" style="color:#e53935"></i> সাম্প্রতিক বার্তা</span>
       <a href="{% url 'admin_messages' %}" class="btn btn-primary btn-sm">সব দেখুন</a>
     </div>
     {% if recent_messages %}
-    <table class="tbl">
-      <thead><tr><th>প্রেরক</th><th>বার্তা</th><th>অবস্থা</th></tr></thead>
-      <tbody>
-        {% for msg in recent_messages %}
-        <tr>
-          <td><strong>{{ msg.name }}</strong><br><small class="text-muted">{{ msg.phone }}</small></td>
-          <td><small>{{ msg.message|truncatechars:50 }}</small></td>
-          <td>{% if msg.is_read %}<span class="badge badge-success">পড়া</span>{% else %}<span class="badge badge-warning">অপঠিত</span>{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>প্রেরক</th>
+            <th>বার্তা</th>
+            <th>অবস্থা</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for msg in recent_messages %}
+          <tr>
+            <td>
+              <strong>{{ msg.name }}</strong>
+              <div class="text-muted small">{{ msg.phone }}</div>
+            </td>
+            <td><small>{{ msg.message|truncatechars:50 }}</small></td>
+            <td>
+              {% if msg.is_read %}
+                <span class="badge badge-success">পড়া</span>
+              {% else %}
+                <span class="badge badge-warning">অপঠিত</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
-    <div class="empty-state"><i class="fas fa-envelope"></i><p>কোনো বার্তা নেই</p></div>
+    <div class="empty-state">
+      <i class="fas fa-envelope"></i>
+      <p>কোনো বার্তা নেই</p>
+    </div>
     {% endif %}
   </div>
 </div>
 
-<div class="card" style="margin-top:0">
-  <div class="card__header"><span class="card__title">দ্রুত নেভিগেশন</span></div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">
-
-{% for name, icon, title in links %}
-
-<a href="{% url name %}" 
-   class="btn btn-secondary"
-   style="justify-content:center;flex-direction:column;height:72px;gap:4px;font-size:12px">
-
-<i class="fas fa-{{ icon }}" style="font-size:18px;color:#2e7d32"></i>
-
-{{ title }}
-
-</a>
-
-{% endfor %}
-
+<!-- quick navigation card -->
+<div class="card quick-nav-card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-compass" style="color:#2e7d32"></i> দ্রুত নেভিগেশন</span>
+  </div>
+  <div class="quick-nav-grid">
+    {% for name, icon, title in links %}
+    <a href="{% url name %}" class="quick-nav-item">
+      <i class="fas fa-{{ icon }}" style="font-size:20px;color:#2e7d32"></i>
+      <span>{{ title }}</span>
+    </a>
+    {% endfor %}
+  </div>
 </div>
-</div>
+
+<!-- extra responsive styles (embedded to keep everything together) -->
+<style>
+  /* Dashboard specific responsive enhancements */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  @media (min-width: 992px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+  }
+
+  /* Make cards work better on small screens */
+  .dashboard-card {
+    height: fit-content;
+    overflow: hidden;
+  }
+
+  /* Quick navigation grid */
+  .quick-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    .quick-nav-grid {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+    }
+  }
+
+  .quick-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 8px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #333;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-align: center;
+    min-height: 80px;
+    border: 1px solid transparent;
+  }
+
+  .quick-nav-item:hover {
+    background: #e8f5e9;
+    border-color: #2e7d32;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  @media (max-width: 480px) {
+    .quick-nav-item {
+      padding: 12px 4px;
+      min-height: 70px;
+      font-size: 11px;
+    }
+    .quick-nav-item i {
+      font-size: 18px !important;
+    }
+  }
+
+  /* Better table responsiveness */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+    padding: 4px 0;
+  }
+
+  .tbl {
+    min-width: 500px;
+  }
+
+  @media (max-width: 640px) {
+    .tbl {
+      min-width: 100%;
+    }
+    .tbl td, .tbl th {
+      padding: 8px 6px;
+      font-size: 12px;
+    }
+  }
+
+  /* Badge adjustments */
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Card header mobile */
+  @media (max-width: 480px) {
+    .card__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .card__header .btn {
+      align-self: flex-start;
+    }
+  }
+
+  /* Empty state mobile */
+  .empty-state {
+    padding: 40px 16px;
+  }
+  @media (max-width: 480px) {
+    .empty-state {
+      padding: 30px 12px;
+    }
+    .empty-state i {
+      font-size: 40px;
+    }
+  }
+
+  /* Stats grid already responsive from base, but fine-tune */
+  @media (max-width: 480px) {
+    .stats-grid {
+      gap: 12px;
+    }
+    .stat-card {
+      padding: 14px 12px;
+    }
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+    }
+    .stat-info p {
+      font-size: 20px;
+    }
+  }
+
+  /* Quick nav card spacing */
+  .quick-nav-card {
+    margin-top: 0;
+  }
+</style>
 {% endblock %}

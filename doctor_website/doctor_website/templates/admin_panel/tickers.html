@@ -2,42 +2,384 @@
 {% block title %}টিকার বার্তা{% endblock %}
 {% block page_title %}টিকার বার্তা{% endblock %}
 {% block nav_tickers %}active{% endblock %}
+
 {% block content %}
 <div class="card">
+  <!-- Card header with responsive flex behavior -->
   <div class="card__header">
     <span class="card__title"><i class="fas fa-bullhorn" style="color:#2e7d32"></i> টিকার বার্তা</span>
-    <button class="btn btn-primary" onclick="openModal('addModal')"><i class="fas fa-plus"></i> নতুন যোগ করুন</button>
+    <button class="btn btn-primary" onclick="openModal('addModal')">
+      <i class="fas fa-plus"></i> 
+      <span class="btn-text">নতুন যোগ করুন</span>
+    </button>
   </div>
-  <table class="tbl">
-    <thead><tr><th>#</th><th>বার্তা</th><th>ক্রম</th><th>অবস্থা</th><th>কার্যক্রম</th></tr></thead>
-    <tbody>
-      {% for item in items %}
-      <tr>
-        <td>{{ item.pk }}</td>
-        <td>{{ item.message }}</td>
-        <td>{{ item.order }}</td>
-        <td>{% if item.is_active %}<span class="badge badge-success">সক্রিয়</span>{% else %}<span class="badge badge-secondary">নিষ্ক্রিয়</span>{% endif %}</td>
-        <td>
-          <div class="action-buttons">
-            <form method="POST" style="display:inline">{% csrf_token %}<input type="hidden" name="action" value="toggle"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-secondary btn-sm btn-icon" title="চালু/বন্ধ"><i class="fas fa-toggle-on"></i></button></form>
-            <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="pk" value="{{ item.pk }}"><button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button></form>
-          </div>
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="5"><div class="empty-state"><i class="fas fa-bullhorn"></i><p>কোনো টিকার নেই</p></div></td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <!-- Table container with horizontal scroll for mobile -->
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>বার্তা</th>
+          <th>ক্রম</th>
+          <th>অবস্থা</th>
+          <th>কার্যক্রম</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td data-label="#">{{ item.pk }}</td>
+          <td data-label="বার্তা">{{ item.message }}</td>
+          <td data-label="ক্রম">{{ item.order }}</td>
+          <td data-label="অবস্থা">
+            {% if item.is_active %}
+              <span class="badge badge-success">সক্রিয়</span>
+            {% else %}
+              <span class="badge badge-secondary">নিষ্ক্রিয়</span>
+            {% endif %}
+          </td>
+          <td data-label="কার্যক্রম">
+            <div class="action-buttons">
+              <!-- Toggle form -->
+              <form method="POST" style="display:inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle">
+                <input type="hidden" name="pk" value="{{ item.pk }}">
+                <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="চালু/বন্ধ">
+                  <i class="fas fa-toggle-on"></i>
+                </button>
+              </form>
+              <!-- Delete form -->
+              <form method="POST" style="display:inline" onsubmit="return confirm('মুছবেন?')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="pk" value="{{ item.pk }}">
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="মুছুন">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="empty-state-cell">
+            <div class="empty-state">
+              <i class="fas fa-bullhorn"></i>
+              <p>কোনো টিকার নেই</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+
+<!-- Add Modal - fully responsive -->
 <div class="modal-overlay" id="addModal">
   <div class="modal-box">
-    <div class="modal-header"><span class="modal-title">নতুন টিকার যোগ করুন</span><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
-    <form method="POST">{% csrf_token %}<input type="hidden" name="action" value="add">
-      <div class="form-group"><label>বার্তা</label><input type="text" name="message" class="form-control" required placeholder="শুক্রবার চেম্বার বন্ধ..." /></div>
-      <div class="form-group"><label>ক্রম নম্বর</label><input type="number" name="order" class="form-control" value="0"/></div>
-      <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-plus-circle" style="color:#2e7d32"></i> নতুন টিকার যোগ করুন</span>
+      <button class="modal-close" onclick="closeModal('addModal')" aria-label="বন্ধ করুন">×</button>
+    </div>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      
+      <div class="form-group">
+        <label for="messageInput">
+          <i class="fas fa-comment" style="margin-right:4px;color:#2e7d32"></i> বার্তা
+        </label>
+        <input type="text" name="message" id="messageInput" class="form-control" 
+               required placeholder="যেমন: শুক্রবার চেম্বার বন্ধ..." />
+      </div>
+      
+      <div class="form-group">
+        <label for="orderInput">
+          <i class="fas fa-sort-numeric-down" style="margin-right:4px;color:#2e7d32"></i> ক্রম নম্বর
+        </label>
+        <input type="number" name="order" id="orderInput" class="form-control" value="0" min="0" />
+        <div class="text-muted" style="font-size:11px;margin-top:4px">ছোট সংখ্যা আগে দেখাবে</div>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">
+          <i class="fas fa-times"></i> বাতিল
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> সংরক্ষণ করুন
+        </button>
+      </div>
     </form>
   </div>
 </div>
+
+<!-- Extra responsive styles for this page -->
+<style>
+  /* Table responsiveness improvements */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+    padding: 4px 0;
+    border-radius: 8px;
+  }
+
+  /* Mobile card-style table */
+  @media (max-width: 640px) {
+    .tbl {
+      min-width: 100%;
+    }
+    
+    .tbl thead {
+      display: none; /* Hide headers on mobile */
+    }
+    
+    .tbl tbody tr {
+      display: block;
+      margin-bottom: 16px;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      padding: 12px;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    
+    .tbl tbody tr td {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border: none;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: left;
+    }
+    
+    .tbl tbody tr td:last-child {
+      border-bottom: none;
+    }
+    
+    .tbl tbody tr td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      width: 90px;
+      min-width: 90px;
+      color: #555;
+      font-size: 12px;
+    }
+    
+    /* Action buttons container */
+    .action-buttons {
+      margin-left: auto;
+      justify-content: flex-end;
+    }
+    
+    /* Badge adjustments */
+    .badge {
+      margin-left: auto;
+    }
+    
+    /* Empty state inside table */
+    .empty-state-cell {
+      display: block !important;
+      padding: 20px !important;
+    }
+    .empty-state-cell:before {
+      display: none !important;
+    }
+  }
+
+  /* Card header responsive */
+  @media (max-width: 480px) {
+    .card__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .btn .btn-text {
+      display: inline; /* Keep text visible */
+    }
+  }
+
+  /* Modal responsive */
+  @media (max-width: 480px) {
+    .modal-box {
+      padding: 20px 16px;
+      margin: 16px;
+    }
+    
+    .modal-actions {
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .modal-actions .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  /* Action buttons container */
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  @media (max-width: 640px) {
+    .action-buttons {
+      margin-left: auto;
+    }
+  }
+  
+  /* Button icon adjustments */
+  .btn-icon {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Modal actions row */
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  @media (min-width: 641px) {
+    .modal-actions {
+      justify-content: flex-end;
+    }
+    
+    .modal-actions .btn {
+      min-width: 120px;
+    }
+  }
+  
+  /* Empty state improvements */
+  .empty-state {
+    padding: 40px 20px;
+  }
+  
+  .empty-state i {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 12px;
+  }
+  
+  .empty-state p {
+    color: #999;
+    font-size: 14px;
+  }
+  
+  /* Badge variations */
+  .badge-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  
+  .badge-secondary {
+    background: #f5f5f5;
+    color: #616161;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  
+  /* Form group enhancements */
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  
+  /* Modal header improvements */
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+  
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a2332;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .modal-close {
+    font-size: 28px;
+    line-height: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+  
+  .modal-close:hover {
+    color: #e53935;
+    background: #f5f5f5;
+  }
+</style>
+
+<!-- Extra JavaScript for better modal handling on mobile -->
+<script>
+  (function() {
+    // Close modal when tapping outside on mobile
+    const modal = document.getElementById('addModal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          closeModal('addModal');
+        }
+      });
+    }
+    
+    // Prevent body scroll when modal is open
+    const originalOverflow = document.body.style.overflow;
+    const modalObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.attributeName === 'class') {
+          if (modal.classList.contains('open')) {
+            document.body.style.overflow = 'hidden';
+          } else {
+            document.body.style.overflow = originalOverflow;
+          }
+        }
+      });
+    });
+    
+    if (modal) {
+      modalObserver.observe(modal, { attributes: true });
+    }
+  })();
+</script>
 {% endblock %}
