@@ -13,10 +13,18 @@ from .models import (
 
 
 def home(request):
+    # Get site settings (assuming there's only one)
+    site = SiteSettings.objects.first()
+    # Check HeroDegree data
+    hero_degrees = HeroDegree.objects.filter(is_active=True)
+    
+
+    
     context = {
+        'site': site,  # ← This was missing! Now template can access {{ site.doctor_name }}, etc.
         'tickers': TickerMessage.objects.filter(is_active=True),
         'trust_chips': TrustChip.objects.filter(is_active=True),
-        'hero_degrees': HeroDegree.objects.filter(is_active=True),
+        'hero_degrees': HeroDegree.objects.filter(is_active=True),  # ← This will now work
         'about_highlights': AboutHighlight.objects.filter(is_active=True),
         'qualifications': Qualification.objects.filter(is_active=True),
         'certificates': Certificate.objects.filter(is_active=True),

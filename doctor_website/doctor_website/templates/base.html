@@ -1,18 +1,73 @@
 <!DOCTYPE html>
 <html lang="bn">
+
 <head>
+  {% load static %}
+  <!-- অবশ্যই সব static এর আগে load করতে হবে -->
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Title -->
   <title>{% block title %}{{ site.meta_title }}{% endblock %}</title>
+
+  <!-- Basic SEO -->
   <meta name="description" content="{{ site.meta_description }}">
+  <meta name="keywords" content="গাইনী ডাক্তার, প্রসূতি বিশেষজ্ঞ, নারী স্বাস্থ্য, gynecologist Bangladesh">
+  <meta name="author" content="{{ site.doctor_name_en }}">
+
+  <!-- Robots -->
+  <meta name="robots" content="index, follow">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+  <!-- Open Graph (Facebook SEO) -->
+  <meta property="og:title" content="{{ site.meta_title }}">
+  <meta property="og:description" content="{{ site.meta_description }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  <meta property="og:image" content="{{ site.profile_image_url }}">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ site.meta_title }}">
+  <meta name="twitter:description" content="{{ site.meta_description }}">
+  <meta name="twitter:image" content="{{ site.profile_image_url }}">
+
+  <!-- Google Verification (optional) -->
+  <meta name="google-site-verification" content="YOUR_CODE">
+
+  <!-- Favicon -->
+  <!-- Favicon & App Icons -->
+  <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon-16x16.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="96x96" href="{% static 'img/favicon-96x96.png' %}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/favicon-192x192.png' %}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}">
+  <link rel="manifest" href="{% static 'img/site.webmanifest' %}">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="{% static 'img/mstile-144x144.png' %}">
+  <meta name="theme-color" content="#ffffff">
+  <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/style1.css' %}" />
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{% static 'css/style4.css' %}" />
+
   {% block extra_css %}{% endblock %}
 </head>
+
 <body>
-{% block body %}{% endblock %}
-<script src="{% static 'js/main.js' %}"></script>
-{% block extra_js %}{% endblock %}
+
+  {% block body %}{% endblock %}
+
+  <!-- Main JS -->
+  <script src="{% static 'js/main.js' %}"></script>
+
+  {% block extra_js %}{% endblock %}
+
 </body>
+
 </html>

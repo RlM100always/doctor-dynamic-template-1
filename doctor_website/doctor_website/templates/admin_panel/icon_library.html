@@ -1,0 +1,249 @@
+{% extends "admin_panel/base_admin.html" %}
+{% load static %}
+
+{% block title %}আইকন লাইব্রেরি{% endblock %}
+{% block page_title %}আইকন লাইব্রেরি{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-icons"></i> ফন্ট অওসাম আইকন লাইব্রেরি</h1>
+    <div class="breadcrumb">
+        <a href="{% url 'admin_dashboard' %}">ড্যাশবোর্ড</a> / আইকন লাইব্রেরি
+    </div>
+</div>
+
+<!-- Search and Info -->
+<div class="card" style="margin-bottom: 24px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between;">
+        <div style="flex: 1; min-width: 250px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label><i class="fas fa-search"></i> আইকন খুঁজুন</label>
+                <input type="text" id="iconSearch" class="form-control" placeholder="যেমন: stethoscope, heart, phone..." style="width: 100%;">
+            </div>
+        </div>
+        <div class="text-muted" style="font-size: 14px;">
+            <i class="fas fa-info-circle"></i> আইকনের উপরে ক্লিক করলে ক্লাস নাম কপি হবে
+        </div>
+    </div>
+</div>
+
+<!-- Categories -->
+<div class="icon-library">
+    {% for category, icons in categories.items %}
+    <div class="card icon-category" data-category="{{ category }}">
+        <div class="card__header">
+            <h3 class="card__title">{{ category }}</h3>
+            <span class="badge badge-info">{{ icons|length }} টি আইকন</span>
+        </div>
+        
+        <div class="icon-grid">
+            {% for icon in icons %}
+            <div class="icon-item" onclick="copyIconClass('{{ icon.class }}')" title="ক্লিক করে কপি করুন">
+                <div class="icon-preview">
+                    <i class="{{ icon.class }}"></i>
+                </div>
+                <div class="icon-name">{{ icon.name }}</div>
+                <div class="icon-class">{{ icon.class }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Toast Notification (for copy feedback) -->
+<div id="toast" style="display: none; position: fixed; bottom: 30px; right: 30px; background: #2e7d32; color: white; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; font-size: 14px; font-weight: 500; animation: slideIn 0.3s ease;">
+    <i class="fas fa-check-circle" style="margin-right: 8px;"></i> <span id="toastMessage">আইকন ক্লাস কপি হয়েছে!</span>
+</div>
+
+<style>
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.icon-item {
+    border: 1px solid #eaeef2;
+    border-radius: 10px;
+    padding: 15px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.icon-item:hover {
+    border-color: #2e7d32;
+    box-shadow: 0 5px 15px rgba(46, 125, 50, 0.15);
+    transform: translateY(-2px);
+}
+
+.icon-item:active {
+    transform: translateY(0);
+}
+
+.icon-preview {
+    font-size: 28px;
+    color: #2e7d32;
+    margin-bottom: 8px;
+}
+
+.icon-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.icon-class {
+    font-size: 10px;
+    color: #888;
+    background: #f5f7fa;
+    padding: 4px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Animation for toast */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* Search highlight */
+.icon-item.hidden {
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .icon-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+    }
+    
+    .icon-preview {
+        font-size: 24px;
+    }
+}
+</style>
+
+<script>
+function copyIconClass(iconClass) {
+    // Create temporary input element
+    const tempInput = document.createElement('input');
+    tempInput.value = iconClass;
+    document.body.appendChild(tempInput);
+    
+    // Select and copy
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999); // For mobile
+    document.execCommand('copy');
+    
+    // Remove temporary element
+    document.body.removeChild(tempInput);
+    
+    // Show toast notification
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    toastMessage.textContent = `"${iconClass}" কপি হয়েছে!`;
+    toast.style.display = 'block';
+    
+    // Hide after 2 seconds
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => {
+            toast.style.display = 'none';
+            toast.style.animation = 'slideIn 0.3s ease'; // Reset animation
+        }, 300);
+    }, 2000);
+}
+
+// Search functionality
+document.getElementById('iconSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase().trim();
+    const iconItems = document.querySelectorAll('.icon-item');
+    const categories = document.querySelectorAll('.icon-category');
+    
+    if (searchTerm === '') {
+        // Show all items and categories
+        iconItems.forEach(item => item.classList.remove('hidden'));
+        categories.forEach(cat => cat.style.display = 'block');
+    } else {
+        // Filter items
+        iconItems.forEach(item => {
+            const name = item.querySelector('.icon-name').textContent.toLowerCase();
+            const iconClass = item.querySelector('.icon-class').textContent.toLowerCase();
+            
+            if (name.includes(searchTerm) || iconClass.includes(searchTerm)) {
+                item.classList.remove('hidden');
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+        
+        // Hide empty categories
+        categories.forEach(cat => {
+            const visibleItems = cat.querySelectorAll('.icon-item:not(.hidden)').length;
+            cat.style.display = visibleItems === 0 ? 'none' : 'block';
+        });
+    }
+});
+
+// Quick category filtering (optional - can be enabled if needed)
+function filterByCategory(category) {
+    const categories = document.querySelectorAll('.icon-category');
+    categories.forEach(cat => {
+        if (category === 'all' || cat.dataset.category === category) {
+            cat.style.display = 'block';
+        } else {
+            cat.style.display = 'none';
+        }
+    });
+    document.getElementById('iconSearch').value = '';
+}
+
+// Show all on page load
+window.addEventListener('load', function() {
+    // You can add any initialization here
+});
+</script>
+
+<!-- Optional: Category filter pills (uncomment if you want category filtering) -->
+<!--
+<div class="card" style="margin-bottom: 24px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0;">
+        <span class="badge badge-primary" style="padding: 8px 16px; cursor: pointer;" onclick="filterByCategory('all')">সবগুলো</span>
+        {% for category in categories.keys %}
+        <span class="badge badge-secondary" style="padding: 8px 16px; cursor: pointer;" onclick="filterByCategory('{{ category }}')">{{ category }}</span>
+        {% endfor %}
+    </div>
+</div>
+-->
+{% endblock %}

@@ -7,7 +7,8 @@
   <div class="ticker__label"><i class="fas fa-leaf"></i> বিজ্ঞপ্তি</div>
   <div class="ticker__track">
     <span>
-      {% for t in tickers %}{% if t.is_active %}{{ t.message }} &nbsp;•&nbsp; {% endif %}{% empty %}অ্যাপয়েন্টমেন্ট: {{ site.phone }} &nbsp;•&nbsp; অনলাইন কনসালটেশন এখন উপলব্ধ &nbsp;•&nbsp;{% endfor %}
+      {% for t in tickers %}{% if t.is_active %}{{ t.message }} &nbsp;•&nbsp; {% endif %}{% empty %}অ্যাপয়েন্টমেন্ট:
+      {{ site.phone }} &nbsp;•&nbsp; অনলাইন কনসালটেশন এখন উপলব্ধ &nbsp;•&nbsp;{% endfor %}
     </span>
   </div>
 </div>
@@ -59,7 +60,7 @@
   <div class="hero__wrap">
     <div class="hero__left">
       <div class="hero__tag"><i class="fas fa-stethoscope"></i> {{ site.specialty }}</div>
-      <h1 class="hero__name">ডাঃ সানজিদা ইসলাম চৌধুরী</h1>
+      <h1 class="hero__name">{{ site.doctor_name }}</h1>
       <div class="hero__degrees">
         {% for deg in hero_degrees %}<span class="hero__deg-pill">{{ deg.label }}</span>
         {% empty %}<span class="hero__deg-pill">MBBS</span><span class="hero__deg-pill">FCPS (গাইনী)</span><span class="hero__deg-pill">MRCOG (UK)</span>
@@ -67,25 +68,103 @@
       </div>
       <p class="hero__bio">{{ site.bio }}</p>
       <div class="hero__numbers">
+
+
         <div class="hero__num-item">
-          <span class="hero__num-val"><b data-target="{{ site.years_experience }}">০</b><span class="hero__num-sup">+</span></span>
+          <span class="hero__num-val">
+            <b data-target="{{ site.years_experience }}">0</b><span class="hero__num-sup">+</span>
+          </span>
           <span class="hero__num-label">বছর অভিজ্ঞতা</span>
         </div>
+
         <div class="hero__num-item">
-          <span class="hero__num-val"><b data-target="{{ site.successful_deliveries }}">০</b><span class="hero__num-sup">+</span></span>
-          <span class="hero__num-label">সফল প্রসব</span>
+          <span class="hero__num-val">
+            <b data-target="{{ site.successful_deliveries }}">0</b><span class="hero__num-sup">+</span>
+          </span>
+          <span class="hero__num-label">সফল চিকিৎসা</span>
         </div>
+
         <div class="hero__num-item">
-          <span class="hero__num-val"><b data-target="4">০</b><span class="hero__num-sup">.৮★</span></span>
+          <span class="hero__num-val">
+            <b data-target="{{ site.google_rating }}">0</b><span class="hero__num-sup">★</span>
+          </span>
           <span class="hero__num-label">রেটিং</span>
         </div>
+
+        <script>
+          // English to Bengali digit map
+          const enToBn = {
+            '0': '০',
+            '1': '১',
+            '2': '২',
+            '3': '৩',
+            '4': '৪',
+            '5': '৫',
+            '6': '৬',
+            '7': '৭',
+            '8': '৮',
+            '9': '৯',
+            '-': '-',
+            '.': '.'
+          };
+
+          // Function to convert numbers to Bengali with optional comma
+          function toBengaliNumber(num) {
+            let parts = num.toString().split('.');
+            let integerPart = parts[0];
+            let decimalPart = parts[1] || '';
+
+            // add comma every 3 digits from right
+            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+            // convert each digit to Bengali
+            let bnInt = integerPart.split('').map(d => enToBn[d] || d).join('');
+            if (decimalPart) {
+              let bnDec = decimalPart.split('').map(d => enToBn[d] || d).join('');
+              return bnInt + '.' + bnDec;
+            }
+            return bnInt;
+          }
+
+          // Format number: remove .0 if whole number
+          function formatNumber(num) {
+            if (num % 1 === 0) {
+              return toBengaliNumber(num.toFixed(0));
+            } else {
+              return toBengaliNumber(num.toFixed(1));
+            }
+          }
+
+          const counters = document.querySelectorAll('.hero__num-val b');
+
+          counters.forEach(counter => {
+            const target = parseFloat(counter.getAttribute('data-target'));
+            let count = 0;
+
+            const step = () => {
+              let increment = target / 100; // adjust speed
+              if (count < target) {
+                count += increment;
+                if (count > target) count = target;
+                counter.innerText = formatNumber(count);
+                requestAnimationFrame(step);
+              } else {
+                counter.innerText = formatNumber(target);
+              }
+            }
+
+            step();
+          });
+        </script>
+
       </div>
       <div class="hero__btns">
         <a href="#appointment" class="btn-forest"><i class="fas fa-calendar-check"></i> অ্যাপয়েন্টমেন্ট নিন</a>
         <a href="tel:{{ site.phone_raw }}" class="btn-ghost"><i class="fas fa-phone-alt"></i> {{ site.phone }}</a>
       </div>
       <div class="hero__trust">
-        {% for chip in trust_chips %}<span class="trust-chip"><i class="{{ chip.icon_class }}"></i> {{ chip.text }}</span>
+        {% for chip in trust_chips %}<span class="trust-chip"><i class="{{ chip.icon_class }}"></i>
+          {{ chip.text }}</span>
         {% empty %}
         <span class="trust-chip"><i class="fas fa-award"></i> BMA Award 2024</span>
         <span class="trust-chip"><i class="fas fa-globe"></i> RCOG Fellow, London</span>
@@ -94,9 +173,12 @@
       </div>
     </div>
     <div class="hero__visual">
-      <div class="hero__ring-outer"></div><div class="hero__ring-inner"></div>
-      <div class="hero__ring-dot hero__ring-dot--1"></div><div class="hero__ring-dot hero__ring-dot--2"></div>
-      <div class="hero__ring-dot hero__ring-dot--3"></div><div class="hero__ring-dot hero__ring-dot--4"></div>
+      <div class="hero__ring-outer"></div>
+      <div class="hero__ring-inner"></div>
+      <div class="hero__ring-dot hero__ring-dot--1"></div>
+      <div class="hero__ring-dot hero__ring-dot--2"></div>
+      <div class="hero__ring-dot hero__ring-dot--3"></div>
+      <div class="hero__ring-dot hero__ring-dot--4"></div>
       <div class="hero__photo-wrap"><img src="{{ site.get_profile_photo }}" alt="{{ site.doctor_name }}" /></div>
       <div class="hero__float hero__float--tl"><i class="fas fa-user-md"></i><span>MRCOG · London</span></div>
       <div class="hero__float hero__float--br"><i class="fas fa-heart"></i><span>মা ও শিশু সেবা</span></div>
@@ -108,7 +190,7 @@
 <section id="about" class="section sec-bg-cream">
   <div class="wrap">
     <div class="sec-label">০১ — পরিচিতি</div>
-    <div class="sec-title">বিশেষজ্ঞ চিকিৎসক<br/>সম্পর্কে জানুন</div>
+    <div class="sec-title">বিশেষজ্ঞ চিকিৎসক<br />সম্পর্কে জানুন</div>
     <div class="about-grid" style="margin-top:48px;">
       <div class="about-text">
         <p>{{ site.bio }}</p>
@@ -116,22 +198,43 @@
           {% for h in about_highlights %}
           <div class="highlight-row reveal">
             <div class="hl-icon"><i class="{{ h.icon_class }}"></i></div>
-            <div class="hl-text"><strong>{{ h.title }}</strong><p>{{ h.description }}</p></div>
+            <div class="hl-text"><strong>{{ h.title }}</strong>
+              <p>{{ h.description }}</p>
+            </div>
           </div>
           {% empty %}
-          <div class="highlight-row reveal"><div class="hl-icon"><i class="fas fa-graduation-cap"></i></div><div class="hl-text"><strong>MRCOG ডিগ্রি</strong><p>রয়্যাল কলেজ অব অবস্টেট্রিশিয়ানস, লন্ডন</p></div></div>
-          <div class="highlight-row reveal"><div class="hl-icon"><i class="fas fa-microscope"></i></div><div class="hl-text"><strong>গবেষণাপত্র</strong><p>১৮টি আন্তর্জাতিক জার্নালে প্রকাশিত</p></div></div>
-          <div class="highlight-row reveal"><div class="hl-icon"><i class="fas fa-award"></i></div><div class="hl-text"><strong>বিএমএ অ্যাওয়ার্ড ২০২৪</strong><p>শ্রেষ্ঠ গাইনী বিশেষজ্ঞ পুরস্কার</p></div></div>
+          <div class="highlight-row reveal">
+            <div class="hl-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="hl-text"><strong>MRCOG ডিগ্রি</strong>
+              <p>রয়্যাল কলেজ অব অবস্টেট্রিশিয়ানস, লন্ডন</p>
+            </div>
+          </div>
+          <div class="highlight-row reveal">
+            <div class="hl-icon"><i class="fas fa-microscope"></i></div>
+            <div class="hl-text"><strong>গবেষণাপত্র</strong>
+              <p>১৮টি আন্তর্জাতিক জার্নালে প্রকাশিত</p>
+            </div>
+          </div>
+          <div class="highlight-row reveal">
+            <div class="hl-icon"><i class="fas fa-award"></i></div>
+            <div class="hl-text"><strong>বিএমএ অ্যাওয়ার্ড ২০২৪</strong>
+              <p>শ্রেষ্ঠ গাইনী বিশেষজ্ঞ পুরস্কার</p>
+            </div>
+          </div>
           {% endfor %}
         </div>
       </div>
       <div class="about-stats">
-        <div class="stat-card stat-card--primary reveal"><i class="fas fa-procedures"></i><span class="stat-num" data-target="{{ site.years_experience }}">০</span><span class="stat-label">বছরের অভিজ্ঞতা</span></div>
+        <div class="stat-card stat-card--primary reveal"><i class="fas fa-procedures"></i><span class="stat-num"
+            data-target="{{ site.years_experience }}">০</span><span class="stat-label">বছরের অভিজ্ঞতা</span></div>
         <div class="stats-row">
-          <div class="stat-card reveal"><i class="fas fa-baby"></i><span class="stat-num" data-target="{{ site.successful_deliveries }}">০</span><span class="stat-label">সফল প্রসব</span></div>
-          <div class="stat-card reveal"><i class="fas fa-star"></i><span class="stat-num" data-target="{{ site.google_review_count }}">০</span><span class="stat-label">গুগল রিভিউ</span></div>
+          <div class="stat-card reveal"><i class="fas fa-baby"></i><span class="stat-num"
+              data-target="{{ site.successful_deliveries }}">০</span><span class="stat-label">সফল চিকিৎসা </span></div>
+          <div class="stat-card reveal"><i class="fas fa-star"></i><span class="stat-num"
+              data-target="{{ site.google_review_count }}">০</span><span class="stat-label">গুগল রিভিউ</span></div>
         </div>
-        <div class="stat-card reveal"><i class="fas fa-file-medical-alt"></i><span class="stat-num" data-target="{{ site.research_papers }}">০</span><span class="stat-label">গবেষণাপত্র</span></div>
+        <div class="stat-card reveal"><i class="fas fa-file-medical-alt"></i><span class="stat-num"
+            data-target="{{ site.research_papers }}">০</span><span class="stat-label">গবেষণাপত্র</span></div>
       </div>
     </div>
   </div>
@@ -142,7 +245,7 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">০২ — একাডেমিক</div>
-      <h2 class="sec-title">শিক্ষাগত যোগ্যতা<br/>ও প্রশিক্ষণ</h2>
+      <h2 class="sec-title">শিক্ষাগত যোগ্যতা<br />ও প্রশিক্ষণ</h2>
     </div>
     <div class="timeline-wrap" style="margin-top:56px;">
       <div class="timeline-spine"></div>
@@ -153,7 +256,8 @@
           <span class="tl-year-badge">{{ q.year }}</span>
           <h3>{{ q.degree }}</h3>
           <p>{{ q.institution }}</p>
-          <span class="tl-type {% if q.entry_type == 'international' or q.entry_type == 'training' %}tl-type--intl{% endif %}">{{ q.get_entry_type_display }}</span>
+          <span
+            class="tl-type {% if q.entry_type == 'international' or q.entry_type == 'training' %}tl-type--intl{% endif %}">{{ q.get_entry_type_display }}</span>
         </div>
       </div>
       {% endfor %}
@@ -166,11 +270,12 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">০৩ — স্বীকৃতি</div>
-      <h2 class="sec-title">সনদপত্র<br/>ও অ্যাফিলিয়েশন</h2>
+      <h2 class="sec-title">সনদপত্র<br />ও অ্যাফিলিয়েশন</h2>
     </div>
     <div class="cert-grid" style="margin-top:52px;">
       {% for c in certificates %}
-      <a href="{{ c.link_url }}" target="_blank" class="cert-card {% if c.is_amber %}cert-card--amber{% endif %} reveal" rel="noopener">
+      <a href="{{ c.link_url }}" target="_blank" class="cert-card {% if c.is_amber %}cert-card--amber{% endif %} reveal"
+        rel="noopener">
         <div class="cert-num">{{ c.number }}</div>
         <div class="cert-icon-wrap"><i class="{{ c.icon_class }}"></i></div>
         <h3>{{ c.title }}</h3>
@@ -187,13 +292,14 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">০৪ — লোকেশন</div>
-      <h2 class="sec-title">চেম্বারের<br/>তথ্য ও সময়সূচি</h2>
+      <h2 class="sec-title">চেম্বারের<br />তথ্য ও সময়সূচি</h2>
     </div>
     <div class="chamber-layout" style="margin-top:52px;">
       {% if site.map_embed_url %}
       <div class="chamber-map-col">
         <iframe src="{{ site.map_embed_url }}" allowfullscreen loading="lazy" title="চেম্বারের অবস্থান"></iframe>
-        <a href="{{ site.maps_link }}" target="_blank" class="map-cta"><i class="fas fa-directions"></i> গুগল ম্যাপে দেখুন</a>
+        <a href="{{ site.maps_link }}" target="_blank" class="map-cta"><i class="fas fa-directions"></i> গুগল ম্যাপে
+          দেখুন</a>
       </div>
       {% endif %}
       {% for ch in chambers %}
@@ -201,7 +307,9 @@
         <div class="ch-badge {% if ch.is_amber %}ch-badge--amber{% endif %}">{{ ch.badge }}</div>
         <div class="ch-head">
           <div class="ch-head-ico"><i class="{{ ch.icon_class }}"></i></div>
-          <div><h3>{{ ch.name }}</h3><span class="ch-area">{{ ch.area }}</span></div>
+          <div>
+            <h3>{{ ch.name }}</h3><span class="ch-area">{{ ch.area }}</span>
+          </div>
         </div>
         <div class="ch-info">
           <div class="ch-row"><i class="fas fa-map-marker-alt"></i><span>{{ ch.address }}</span></div>
@@ -220,7 +328,7 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">০৫ — বিশেষত্ব</div>
-      <h2 class="sec-title">চিকিৎসা<br/>সেবার পরিধি</h2>
+      <h2 class="sec-title">চিকিৎসা<br />সেবার পরিধি</h2>
     </div>
     <div class="srv-grid" style="margin-top:52px;">
       {% for svc in services %}
@@ -239,16 +347,27 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">০৬ — মূল্য তালিকা</div>
-      <h2 class="sec-title">ফি চার্ট<br/>ও সেবা মূল্য</h2>
+      <h2 class="sec-title">ফি চার্ট<br />ও সেবা মূল্য</h2>
     </div>
     <div class="fees-wrap" style="margin-top:52px;">
       <div class="fees-table-outer reveal">
         <table class="fees-table">
-          <thead><tr><th>সেবার ধরন</th><th>ফি (টাকা)</th><th>অন্তর্ভুক্ত</th></tr></thead>
+          <thead>
+            <tr>
+              <th>সেবার ধরন</th>
+              <th>ফি (টাকা)</th>
+              <th>অন্তর্ভুক্ত</th>
+            </tr>
+          </thead>
           <tbody>
             {% for fee in fees %}
-            <tr {% if fee.is_featured %}class="fees-featured"{% endif %}>
-              <td><div class="fee-name-cell"><div class="fee-dot {% if fee.is_featured %}fee-featured-dot{% endif %}"></div>{{ fee.service_name }}{% if fee.is_featured %} ★{% endif %}</div></td>
+            <tr {% if fee.is_featured %}class="fees-featured" {% endif %}>
+              <td>
+                <div class="fee-name-cell">
+                  <div class="fee-dot {% if fee.is_featured %}fee-featured-dot{% endif %}"></div>
+                  {{ fee.service_name }}{% if fee.is_featured %} ★{% endif %}
+                </div>
+              </td>
               <td><span class="fee-price">{{ fee.fee }}</span></td>
               <td>{{ fee.includes }}</td>
             </tr>
@@ -282,7 +401,7 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">০৭ — বুকিং</div>
-      <h2 class="sec-title">অনলাইন<br/>অ্যাপয়েন্টমেন্ট</h2>
+      <h2 class="sec-title">অনলাইন<br />অ্যাপয়েন্টমেন্ট</h2>
     </div>
     <div class="appt-grid" style="margin-top:52px;">
       <div class="appt-form-box reveal">
@@ -290,25 +409,32 @@
         <form id="apptForm" novalidate>
           {% csrf_token %}
           <div class="form-row">
-            <div class="fg"><label>রোগীর নাম <em>*</em></label><input type="text" id="aName" placeholder="পূর্ণ নাম লিখুন" required /><span class="err" id="aNameErr"></span></div>
-            <div class="fg"><label>মোবাইল নম্বর <em>*</em></label><input type="tel" id="aPhone" placeholder="০১XXXXXXXXX" required /><span class="err" id="aPhoneErr"></span></div>
+            <div class="fg"><label>রোগীর নাম <em>*</em></label><input type="text" id="aName"
+                placeholder="পূর্ণ নাম লিখুন" required /><span class="err" id="aNameErr"></span></div>
+            <div class="fg"><label>মোবাইল নম্বর <em>*</em></label><input type="tel" id="aPhone"
+                placeholder="০১XXXXXXXXX" required /><span class="err" id="aPhoneErr"></span></div>
           </div>
           <div class="form-row">
-            <div class="fg"><label>তারিখ নির্বাচন <em>*</em></label><input type="date" id="aDate" required /><span class="err" id="aDateErr"></span></div>
+            <div class="fg"><label>তারিখ নির্বাচন <em>*</em></label><input type="date" id="aDate" required /><span
+                class="err" id="aDateErr"></span></div>
             <div class="fg"><label>সময় <em>*</em></label>
               <select id="aTime" required>
                 <option value="">সময় বেছে নিন</option>
                 {% for slot in time_slots %}<option value="{{ slot.value }}">{{ slot.label }}</option>
                 {% empty %}
-                <option>সকাল ৯:০০ টা</option><option>সকাল ১০:০০ টা</option>
-                <option>বিকাল ৫:০০ টা</option><option>বিকাল ৬:০০ টা</option>
+                <option>সকাল ৯:০০ টা</option>
+                <option>সকাল ১০:০০ টা</option>
+                <option>বিকাল ৫:০০ টা</option>
+                <option>বিকাল ৬:০০ টা</option>
                 {% endfor %}
               </select>
               <span class="err" id="aTimeErr"></span>
             </div>
           </div>
-          <div class="fg fg--full"><label>সমস্যার বিবরণ</label><textarea id="aNote" rows="4" placeholder="আপনার সমস্যা সংক্ষেপে জানান..."></textarea></div>
-          <button type="submit" class="submit-btn"><i class="fas fa-check-circle"></i> অ্যাপয়েন্টমেন্ট নিশ্চিত করুন</button>
+          <div class="fg fg--full"><label>সমস্যার বিবরণ</label><textarea id="aNote" rows="4"
+              placeholder="আপনার সমস্যা সংক্ষেপে জানান..."></textarea></div>
+          <button type="submit" class="submit-btn"><i class="fas fa-check-circle"></i> অ্যাপয়েন্টমেন্ট নিশ্চিত
+            করুন</button>
         </form>
       </div>
       <div class="success-modal" id="successModal">
@@ -325,14 +451,18 @@
           <p>অগ্রিম বুকিং ফি পাঠান</p>
           <div class="pay-amount-big">৳ {{ site.booking_fee }}</div>
           <div class="pay-list">
-            <div class="pay-item"><span class="pay-badge bkash">bKash</span><span class="pay-num">{{ site.bkash_number }}</span></div>
-            <div class="pay-item"><span class="pay-badge nagad">Nagad</span><span class="pay-num">{{ site.nagad_number }}</span></div>
-            <div class="pay-item"><span class="pay-badge rocket">Rocket</span><span class="pay-num">{{ site.rocket_number }}</span></div>
+            <div class="pay-item"><span class="pay-badge bkash">bKash</span><span
+                class="pay-num">{{ site.bkash_number }}</span></div>
+            <div class="pay-item"><span class="pay-badge nagad">Nagad</span><span
+                class="pay-num">{{ site.nagad_number }}</span></div>
+            <div class="pay-item"><span class="pay-badge rocket">Rocket</span><span
+                class="pay-num">{{ site.rocket_number }}</span></div>
           </div>
           <div class="qr-placeholder"><i class="fas fa-qrcode"></i><span>bKash QR স্ক্যান করুন</span></div>
         </div>
         <div class="contact-quick reveal">
-          <a href="https://wa.me/{{ site.whatsapp }}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> হোয়াটসঅ্যাপে বার্তা দিন</a>
+          <a href="https://wa.me/{{ site.whatsapp }}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i>
+            হোয়াটসঅ্যাপে বার্তা দিন</a>
           <p><i class="fas fa-sms"></i> বুকিং নিশ্চিতকরণ এসএমএস পাবেন</p>
         </div>
       </div>
@@ -345,7 +475,7 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">০৮ — মতামত</div>
-      <h2 class="sec-title">রোগীর<br/>অভিজ্ঞতা ও রিভিউ</h2>
+      <h2 class="sec-title">রোগীর<br />অভিজ্ঞতা ও রিভিউ</h2>
     </div>
     <div style="margin-top:52px;">
       <div class="rating-overview reveal">
@@ -356,15 +486,33 @@
         </div>
         <div class="google-badge">
           <i class="fab fa-google"></i>
-          <div><strong>Google Reviews</strong><p>{{ site.google_review_count }}+ যাচাইকৃত রিভিউ</p></div>
+          <div><strong>Google Reviews</strong>
+            <p>{{ site.google_review_count }}+ যাচাইকৃত রিভিউ</p>
+          </div>
         </div>
         <div class="rating-bars">
           {% for bar in rating_bars %}
-          <div class="rbar"><span>{{ bar.stars }}★</span><div class="rbar__track"><div class="rbar__fill" data-width="{{ bar.percentage }}%"></div></div><span>{{ bar.percentage }}%</span></div>
+          <div class="rbar"><span>{{ bar.stars }}★</span>
+            <div class="rbar__track">
+              <div class="rbar__fill" data-width="{{ bar.percentage }}%"></div>
+            </div><span>{{ bar.percentage }}%</span>
+          </div>
           {% empty %}
-          <div class="rbar"><span>৫★</span><div class="rbar__track"><div class="rbar__fill" data-width="82%"></div></div><span>৮২%</span></div>
-          <div class="rbar"><span>৪★</span><div class="rbar__track"><div class="rbar__fill" data-width="12%"></div></div><span>১২%</span></div>
-          <div class="rbar"><span>৩★</span><div class="rbar__track"><div class="rbar__fill" data-width="4%"></div></div><span>৪%</span></div>
+          <div class="rbar"><span>৫★</span>
+            <div class="rbar__track">
+              <div class="rbar__fill" data-width="82%"></div>
+            </div><span>৮২%</span>
+          </div>
+          <div class="rbar"><span>৪★</span>
+            <div class="rbar__track">
+              <div class="rbar__fill" data-width="12%"></div>
+            </div><span>১২%</span>
+          </div>
+          <div class="rbar"><span>৩★</span>
+            <div class="rbar__track">
+              <div class="rbar__fill" data-width="4%"></div>
+            </div><span>৪%</span>
+          </div>
           {% endfor %}
         </div>
       </div>
@@ -373,8 +521,11 @@
         <div class="rev-card {% if rev.is_accent %}rev-card--accent{% endif %} reveal">
           <div class="rev-top">
             <div class="rev-av">{{ rev.avatar_letter }}</div>
-            <div><strong>{{ rev.reviewer_name }}</strong><div class="rev-stars">{{ rev.get_stars }}</div></div>
-            {% if rev.is_verified %}<span class="rev-verified"><i class="fas fa-shield-alt"></i> যাচাইকৃত</span>{% endif %}
+            <div><strong>{{ rev.reviewer_name }}</strong>
+              <div class="rev-stars">{{ rev.get_stars }}</div>
+            </div>
+            {% if rev.is_verified %}<span class="rev-verified"><i class="fas fa-shield-alt"></i>
+              যাচাইকৃত</span>{% endif %}
           </div>
           <p>"{{ rev.review_text }}"</p>
         </div>
@@ -401,9 +552,9 @@
       <article class="vid-card reveal">
         <div class="vid-frame">
           <iframe src="{{ vid.get_embed_url }}" title="{{ vid.title }}" frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowfullscreen loading="lazy">
-        </iframe>
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowfullscreen loading="lazy">
+          </iframe>
 
         </div>
 
@@ -426,7 +577,7 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">১০ — স্বাস্থ্য তথ্য</div>
-      <h2 class="sec-title">ডাক্তারের<br/>স্বাস্থ্য ব্লগ</h2>
+      <h2 class="sec-title">ডাক্তারের<br />স্বাস্থ্য ব্লগ</h2>
     </div>
 
     <div class="blog-grid" style="margin-top:52px;">
@@ -451,13 +602,16 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">প্রেস ও স্বীকৃতি</div>
-      <h2 class="sec-title">মিডিয়া কভারেজ<br/>ও সম্মাননা</h2>
+      <h2 class="sec-title">মিডিয়া কভারেজ<br />ও সম্মাননা</h2>
     </div>
     <div class="media-grid" style="margin-top:52px;">
       {% for m in media_coverages %}
       <div class="media-card {% if m.is_amber %}media-card--amber{% endif %} reveal">
         <div class="media-ico"><i class="{{ m.icon_class }}"></i></div>
-        <div><h4>{{ m.outlet_name }}</h4><p>{{ m.description }}</p></div>
+        <div>
+          <h4>{{ m.outlet_name }}</h4>
+          <p>{{ m.description }}</p>
+        </div>
       </div>
       {% endfor %}
     </div>
@@ -470,7 +624,7 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">১১ — দল</div>
-      <h2 class="sec-title">আমাদের<br/>স্বাস্থ্যসেবা টিম</h2>
+      <h2 class="sec-title">আমাদের<br />স্বাস্থ্যসেবা টিম</h2>
     </div>
     <div class="team-grid" style="margin-top:52px;">
       {% for member in team_members %}
@@ -496,7 +650,7 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">১২ — প্রশ্নোত্তর</div>
-      <h2 class="sec-title">সাধারণ<br/>জিজ্ঞাসা ও উত্তর</h2>
+      <h2 class="sec-title">সাধারণ<br />জিজ্ঞাসা ও উত্তর</h2>
     </div>
     <div class="faq-grid" style="margin-top:52px;">
       {% for faq in faqs %}
@@ -505,7 +659,9 @@
           <span>{{ faq.question }}</span>
           <div class="faq-icon"><i class="fas fa-plus"></i></div>
         </button>
-        <div class="faq-ans"><p>{{ faq.answer }}</p></div>
+        <div class="faq-ans">
+          <p>{{ faq.answer }}</p>
+        </div>
       </div>
       {% endfor %}
     </div>
@@ -517,26 +673,34 @@
   <div class="wrap">
     <div class="sec-header-center">
       <div class="sec-label">১৩ — যোগাযোগ</div>
-      <h2 class="sec-title">আমাদের সাথে<br/>কথা বলুন</h2>
+      <h2 class="sec-title">আমাদের সাথে<br />কথা বলুন</h2>
     </div>
     <div class="contact-layout" style="margin-top:52px;">
       <div class="contact-links">
         <a href="tel:{{ site.phone_raw }}" class="con-card reveal">
           <div class="con-ico"><i class="fas fa-phone-alt"></i></div>
-          <div class="con-info"><span>ফোন</span><p>{{ site.phone }}</p></div>
+          <div class="con-info"><span>ফোন</span>
+            <p>{{ site.phone }}</p>
+          </div>
         </a>
         <a href="https://wa.me/{{ site.whatsapp }}" target="_blank" class="con-card con-card--wa reveal">
           <div class="con-ico"><i class="fab fa-whatsapp"></i></div>
-          <div class="con-info"><span>হোয়াটসঅ্যাপ</span><p>{{ site.phone }}</p></div>
+          <div class="con-info"><span>হোয়াটসঅ্যাপ</span>
+            <p>{{ site.phone }}</p>
+          </div>
         </a>
         <a href="mailto:{{ site.email }}" class="con-card con-card--mail reveal">
           <div class="con-ico"><i class="fas fa-envelope"></i></div>
-          <div class="con-info"><span>ইমেইল</span><p>{{ site.email }}</p></div>
+          <div class="con-info"><span>ইমেইল</span>
+            <p>{{ site.email }}</p>
+          </div>
         </a>
         {% if site.facebook_url %}
         <a href="{{ site.facebook_url }}" target="_blank" class="con-card con-card--fb reveal">
           <div class="con-ico"><i class="fab fa-facebook-f"></i></div>
-          <div class="con-info"><span>ফেসবুক</span><p>{{ site.facebook_url|truncatechars:30 }}</p></div>
+          <div class="con-info"><span>ফেসবুক</span>
+            <p>{{ site.facebook_url|truncatechars:30 }}</p>
+          </div>
         </a>
         {% endif %}
       </div>
@@ -544,12 +708,17 @@
         <form id="contactForm" novalidate>
           {% csrf_token %}
           <div class="fg-row" style="margin-bottom:18px;">
-            <div class="fg"><label>আপনার নাম *</label><input type="text" id="cName" placeholder="পূর্ণ নাম" required /></div>
-            <div class="fg"><label>মোবাইল নম্বর *</label><input type="tel" id="cPhone" placeholder="০১XXXXXXXXX" required /></div>
+            <div class="fg"><label>আপনার নাম *</label><input type="text" id="cName" placeholder="পূর্ণ নাম" required />
+            </div>
+            <div class="fg"><label>মোবাইল নম্বর *</label><input type="tel" id="cPhone" placeholder="০১XXXXXXXXX"
+                required /></div>
           </div>
-          <div class="fg" style="margin-bottom:18px;"><label>ইমেইল (ঐচ্ছিক)</label><input type="email" id="cEmail" placeholder="email@example.com" /></div>
-          <div class="fg" style="margin-bottom:24px;"><label>আপনার বার্তা *</label><textarea id="cMsg" rows="5" placeholder="আপনার প্রশ্ন বা বার্তা লিখুন..." required></textarea></div>
-          <button type="submit" class="submit-btn submit-btn--green"><i class="fas fa-paper-plane"></i> বার্তা পাঠান</button>
+          <div class="fg" style="margin-bottom:18px;"><label>ইমেইল (ঐচ্ছিক)</label><input type="email" id="cEmail"
+              placeholder="email@example.com" /></div>
+          <div class="fg" style="margin-bottom:24px;"><label>আপনার বার্তা *</label><textarea id="cMsg" rows="5"
+              placeholder="আপনার প্রশ্ন বা বার্তা লিখুন..." required></textarea></div>
+          <button type="submit" class="submit-btn submit-btn--green"><i class="fas fa-paper-plane"></i> বার্তা
+            পাঠান</button>
         </form>
       </div>
     </div>
@@ -571,7 +740,9 @@
   <div class="footer__top">
     <div class="wrap footer__grid">
       <div class="footer__brand">
-        <div class="footer__brand-icon">ডা·স</div>
+        <div class="footer__brand-icon">
+                <div class="logo__avatar"><img src="{{ site.get_profile_photo }}" alt="{{ site.doctor_name }}" /></div>
+        </div>
         <div class="footer__brand-info">
           <h3>{{ site.doctor_name }}</h3>
           <p>{{ site.degrees }}</p>
@@ -593,9 +764,11 @@
         <p><i class="fas fa-envelope"></i> {{ site.email }}</p>
         <p><i class="fas fa-map-marker-alt"></i> ঢাকা, বাংলাদেশ</p>
         <div class="footer__socials">
-          {% if site.facebook_url %}<a href="{{ site.facebook_url }}" target="_blank"><i class="fab fa-facebook-f"></i></a>{% endif %}
+          {% if site.facebook_url %}<a href="{{ site.facebook_url }}" target="_blank"><i
+              class="fab fa-facebook-f"></i></a>{% endif %}
           <a href="https://wa.me/{{ site.whatsapp }}" target="_blank"><i class="fab fa-whatsapp"></i></a>
-          {% if site.youtube_url %}<a href="{{ site.youtube_url }}" target="_blank"><i class="fab fa-youtube"></i></a>{% endif %}
+          {% if site.youtube_url %}<a href="{{ site.youtube_url }}" target="_blank"><i
+              class="fab fa-youtube"></i></a>{% endif %}
         </div>
       </div>
     </div>
@@ -612,86 +785,137 @@
 </footer>
 
 <script>
-// Appointment form - AJAX submit
-document.getElementById('apptForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const name = document.getElementById('aName').value.trim();
-  const phone = document.getElementById('aPhone').value.trim();
-  const date = document.getElementById('aDate').value;
-  const time = document.getElementById('aTime').value;
-  const note = document.getElementById('aNote').value.trim();
-  let valid = true;
-  if (!name) { document.getElementById('aNameErr').textContent = 'নাম লিখুন'; valid = false; } else { document.getElementById('aNameErr').textContent = ''; }
-  if (!phone) { document.getElementById('aPhoneErr').textContent = 'ফোন নম্বর লিখুন'; valid = false; } else { document.getElementById('aPhoneErr').textContent = ''; }
-  if (!date) { document.getElementById('aDateErr').textContent = 'তারিখ নির্বাচন করুন'; valid = false; } else { document.getElementById('aDateErr').textContent = ''; }
-  if (!time) { document.getElementById('aTimeErr').textContent = 'সময় নির্বাচন করুন'; valid = false; } else { document.getElementById('aTimeErr').textContent = ''; }
-  if (!valid) return;
-  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  try {
-    const res = await fetch('/appointments/book/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
-      body: JSON.stringify({ name, phone, date, time_slot: time, note })
-    });
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('successModal').style.display = 'flex';
-      document.getElementById('apptForm').reset();
-    } else { alert('ত্রুটি: ' + (data.error || 'আবার চেষ্টা করুন')); }
-  } catch(err) { alert('সংযোগ সমস্যা। আবার চেষ্টা করুন।'); }
-});
+  // Appointment form - AJAX submit
+  document.getElementById('apptForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const name = document.getElementById('aName').value.trim();
+    const phone = document.getElementById('aPhone').value.trim();
+    const date = document.getElementById('aDate').value;
+    const time = document.getElementById('aTime').value;
+    const note = document.getElementById('aNote').value.trim();
+    let valid = true;
+    if (!name) {
+      document.getElementById('aNameErr').textContent = 'নাম লিখুন';
+      valid = false;
+    } else {
+      document.getElementById('aNameErr').textContent = '';
+    }
+    if (!phone) {
+      document.getElementById('aPhoneErr').textContent = 'ফোন নম্বর লিখুন';
+      valid = false;
+    } else {
+      document.getElementById('aPhoneErr').textContent = '';
+    }
+    if (!date) {
+      document.getElementById('aDateErr').textContent = 'তারিখ নির্বাচন করুন';
+      valid = false;
+    } else {
+      document.getElementById('aDateErr').textContent = '';
+    }
+    if (!time) {
+      document.getElementById('aTimeErr').textContent = 'সময় নির্বাচন করুন';
+      valid = false;
+    } else {
+      document.getElementById('aTimeErr').textContent = '';
+    }
+    if (!valid) return;
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    try {
+      const res = await fetch('/appointments/book/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf
+        },
+        body: JSON.stringify({
+          name,
+          phone,
+          date,
+          time_slot: time,
+          note
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('successModal').style.display = 'flex';
+        document.getElementById('apptForm').reset();
+      } else {
+        alert('ত্রুটি: ' + (data.error || 'আবার চেষ্টা করুন'));
+      }
+    } catch (err) {
+      alert('সংযোগ সমস্যা। আবার চেষ্টা করুন।');
+    }
+  });
 
-document.getElementById('closeModalBtn').addEventListener('click', function() {
-  document.getElementById('successModal').style.display = 'none';
-});
+  document.getElementById('closeModalBtn').addEventListener('click', function () {
+    document.getElementById('successModal').style.display = 'none';
+  });
 
-// Contact form - AJAX submit
-document.getElementById('contactForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const name = document.getElementById('cName').value.trim();
-  const phone = document.getElementById('cPhone').value.trim();
-  const email = document.getElementById('cEmail').value.trim();
-  const message = document.getElementById('cMsg').value.trim();
-  if (!name || !phone || !message) { alert('সব প্রয়োজনীয় তথ্য পূরণ করুন।'); return; }
-  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  try {
-    const res = await fetch('/contact/submit/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
-      body: JSON.stringify({ name, phone, email, message })
-    });
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('contactSuccessModal').style.display = 'flex';
-      document.getElementById('contactForm').reset();
-    } else { alert('ত্রুটি: ' + (data.error || 'আবার চেষ্টা করুন')); }
-  } catch(err) { alert('সংযোগ সমস্যা।'); }
-});
+  // Contact form - AJAX submit
+  document.getElementById('contactForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const name = document.getElementById('cName').value.trim();
+    const phone = document.getElementById('cPhone').value.trim();
+    const email = document.getElementById('cEmail').value.trim();
+    const message = document.getElementById('cMsg').value.trim();
+    if (!name || !phone || !message) {
+      alert('সব প্রয়োজনীয় তথ্য পূরণ করুন।');
+      return;
+    }
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    try {
+      const res = await fetch('/contact/submit/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf
+        },
+        body: JSON.stringify({
+          name,
+          phone,
+          email,
+          message
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('contactSuccessModal').style.display = 'flex';
+        document.getElementById('contactForm').reset();
+      } else {
+        alert('ত্রুটি: ' + (data.error || 'আবার চেষ্টা করুন'));
+      }
+    } catch (err) {
+      alert('সংযোগ সমস্যা।');
+    }
+  });
 
-document.getElementById('closeContactModal').addEventListener('click', function() {
-  document.getElementById('contactSuccessModal').style.display = 'none';
-});
+  document.getElementById('closeContactModal').addEventListener('click', function () {
+    document.getElementById('contactSuccessModal').style.display = 'none';
+  });
 
-// Blog modal
-async function openBlog(pk) {
-  try {
-    const res = await fetch('/blog/' + pk + '/');
-    const data = await res.json();
-    document.getElementById('blog-modal-body').innerHTML =
-      '<div class="blog-cat"><i class="' + data.icon_class + '"></i> ' + data.category + '</div>' +
-      '<h2 style="margin:16px 0 12px;font-size:22px;">' + data.title + '</h2>' +
-      '<div style="line-height:1.8;color:#555;">' + (data.content || data.excerpt) + '</div>';
-    document.getElementById('blog-modal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-  } catch(e) {}
-}
+  // Blog modal
+  async function openBlog(pk) {
+    try {
+      const res = await fetch('/blog/' + pk + '/');
+      const data = await res.json();
+      document.getElementById('blog-modal-body').innerHTML =
+        '<div class="blog-cat"><i class="' + data.icon_class + '"></i> ' + data.category + '</div>' +
+        '<h2 style="margin:16px 0 12px;font-size:22px;">' + data.title + '</h2>' +
+        '<div style="line-height:1.8;color:#555;">' + (data.content || data.excerpt) + '</div>';
+      document.getElementById('blog-modal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    } catch (e) {}
+  }
 
-document.getElementById('blogModalClose').addEventListener('click', function() {
-  document.getElementById('blog-modal').classList.remove('active');
-  document.body.style.overflow = '';
-});
-document.getElementById('blog-modal').addEventListener('click', function(e) {
-  if (e.target === this) { this.classList.remove('active'); document.body.style.overflow = ''; }
-});
+  document.getElementById('blogModalClose').addEventListener('click', function () {
+    document.getElementById('blog-modal').classList.remove('active');
+    document.body.style.overflow = '';
+  });
+  document.getElementById('blog-modal').addEventListener('click', function (e) {
+    if (e.target === this) {
+      this.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
 </script>
 {% endblock %}

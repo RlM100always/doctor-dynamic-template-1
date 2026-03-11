@@ -532,11 +532,49 @@
     <a href="{% url 'admin_team' %}" class="sidebar__link {% block nav_team %}{% endblock %}"><i class="fas fa-users"></i> টিম সদস্য</a>
     <a href="{% url 'admin_faqs' %}" class="sidebar__link {% block nav_faqs %}{% endblock %}"><i class="fas fa-question-circle"></i> FAQ</a>
 
+    <!-- After টিকার বার্তা -->
+<a href="{% url 'admin_hero_degrees' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_hero_degrees' %}active{% endif %}">
+    <i class="fas fa-graduation-cap"></i> হিরো ডিগ্রি
+</a>
+
+<!-- After সেবা -->
+<a href="{% url 'admin_trust_chips' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_trust_chips' %}active{% endif %}">
+    <i class="fas fa-award"></i> ট্রাস্ট চিপ
+</a>
+<a href="{% url 'admin_about_highlights' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_about_highlights' %}active{% endif %}">
+    <i class="fas fa-highlighter"></i> পরিচিতির হাইলাইট
+</a>
+
+<!-- After ফি চার্ট -->
+<a href="{% url 'admin_fee_info' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_fee_info' %}active{% endif %}">
+    <i class="fas fa-info-circle"></i> ফি তথ্য
+</a>
+
+<!-- After রিভিউ -->
+<a href="{% url 'admin_rating_bars' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_rating_bars' %}active{% endif %}">
+    <i class="fas fa-chart-bar"></i> রেটিং বার
+</a>
+
+<!-- After ব্লগ পোস্ট -->
+<a href="{% url 'admin_time_slots' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_time_slots' %}active{% endif %}">
+    <i class="fas fa-clock"></i> সময় স্লট
+</a>
+
+<!-- Add this in your sidebar navigation where you want it to appear -->
+<!-- I suggest adding it after "সাইট কনটেন্ট" or before "অন্যান্য" -->
+
+<div class="nav-section-label">ইউটিলিটি</div>
+<a href="{% url 'admin_icon_library' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_icon_library' %}active{% endif %}">
+    <i class="fas fa-icons"></i> আইকন লাইব্রেরি
+</a>
+
+
     <div class="nav-section-label">অন্যান্য</div>
     <a href="/" target="_blank" class="sidebar__link"><i class="fas fa-external-link-alt"></i> সাইট দেখুন</a>
     <a href="{% url 'admin_logout' %}" class="sidebar__link" style="color:#ff6b6b"><i class="fas fa-sign-out-alt"></i> লগ আউট</a>
   </nav>
 </aside>
+
 
 <!-- TOPBAR -->
 <div class="topbar">

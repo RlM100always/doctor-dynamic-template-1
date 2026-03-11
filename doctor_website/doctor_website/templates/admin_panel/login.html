@@ -2,89 +2,1044 @@
 <html lang="bn">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>অ্যাডমিন লগইন — ডাক্তার ওয়েবসাইট</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes"/>
+  <title>অ্যাডমিন লগইন — মেডিকেল ড্যাশবোর্ড</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
+    }
+
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #1a2332 0%, #2e4057 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, #0B2A35 0%, #1A4B5E 45%, #12424F 100%);
+      position: relative;
+      overflow-x: hidden;
+      padding: 16px;
     }
-    .login-box {
-      background: #fff; border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 420px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+
+    /* Animated background elements */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 30%),
+                  radial-gradient(circle at 80% 70%, rgba(72, 187, 120, 0.1) 0%, transparent 35%);
+      pointer-events: none;
     }
-    .login-logo {
-      text-align: center; margin-bottom: 28px;
+
+    .floating-shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      animation: float 20s infinite ease-in-out;
     }
-    .login-logo .icon {
-      width: 64px; height: 64px; background: #2e7d32; border-radius: 16px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 24px; color: #fff; font-weight: 800; margin-bottom: 12px;
+
+    .shape-1 {
+      width: 300px;
+      height: 300px;
+      top: -100px;
+      right: -100px;
+      animation-delay: -2s;
     }
-    .login-logo h2 { font-size: 20px; color: #1a2332; font-weight: 700; }
-    .login-logo p { font-size: 13px; color: #888; }
-    .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 7px; }
-    .input-wrap { position: relative; }
-    .input-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; }
-    .input-wrap input {
-      width: 100%; padding: 11px 13px 11px 36px; border: 1.5px solid #ddd;
-      border-radius: 9px; font-size: 14px; transition: border-color .2s;
+
+    .shape-2 {
+      width: 400px;
+      height: 400px;
+      bottom: -150px;
+      left: -150px;
+      animation-delay: -5s;
+      background: rgba(72, 187, 120, 0.02);
     }
-    .input-wrap input:focus { outline: none; border-color: #2e7d32; }
-    .btn-login {
-      width: 100%; padding: 12px; background: #2e7d32; color: #fff; border: none;
-      border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer;
-      transition: background .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+
+    .shape-3 {
+      width: 200px;
+      height: 200px;
+      top: 40%;
+      left: 10%;
+      animation-delay: -8s;
+      border: 2px dashed rgba(255,255,255,0.03);
     }
-    .btn-login:hover { background: #43a047; }
-    .alert-error {
-      background: #ffebee; color: #c62828; border: 1px solid #ffcdd2;
-      padding: 11px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 13px;
-      display: flex; align-items: center; gap: 8px;
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(30px, 30px) rotate(5deg); }
+      75% { transform: translate(-20px, 20px) rotate(-5deg); }
     }
-    .back-link { text-align: center; margin-top: 16px; }
-    .back-link a { color: #2e7d32; text-decoration: none; font-size: 13px; }
+
+    /* Main container */
+    .login-wrapper {
+      width: 100%;
+      max-width: 1320px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: stretch;
+      min-height: 600px;
+      border-radius: 48px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      overflow: hidden;
+    }
+
+    /* Left side - Branding/Medical Theme */
+    .login-brand {
+      flex: 1.2;
+      background: linear-gradient(135deg, #0D3B42 0%, #196A5E 100%);
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-content {
+      position: relative;
+      z-index: 5;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .medical-icon {
+      display: inline-flex;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .icon-circle {
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transform: rotate(10deg);
+      transition: transform 0.3s ease;
+    }
+
+    .icon-circle:nth-child(2) {
+      transform: rotate(-5deg);
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .brand-title {
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .brand-title span {
+      display: block;
+      font-size: 1.2rem;
+      font-weight: 400;
+      opacity: 0.9;
+      margin-top: 10px;
+      letter-spacing: 2px;
+    }
+
+    .brand-features {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: white;
+      opacity: 0.85;
+      transition: opacity 0.3s;
+    }
+
+    .feature-item:hover {
+      opacity: 1;
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    .feature-text {
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .feature-text small {
+      display: block;
+      font-size: 0.8rem;
+      opacity: 0.6;
+      margin-top: 4px;
+    }
+
+    /* Right side - Login Form */
+    .login-form-container {
+      flex: 0.9;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(30px);
+      padding: 56px 48px;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-box {
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    .form-header {
+      margin-bottom: 40px;
+    }
+
+    .form-header h2 {
+      font-size: 2.2rem;
+      color: #0B2A35;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .form-header p {
+      color: #4A5A68;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-header p i {
+      color: #48BB78;
+    }
+
+    /* Form elements */
+    .input-group {
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #1F3A47;
+      margin-bottom: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #7B8A9B;
+      font-size: 1rem;
+      transition: color 0.3s;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 16px 16px 16px 48px;
+      background: #F8FAFC;
+      border: 2px solid #E2E8F0;
+      border-radius: 24px;
+      font-size: 1rem;
+      color: #1A2B36;
+      transition: all 0.3s ease;
+    }
+
+    .input-wrapper input:focus {
+      outline: none;
+      border-color: #0B2A35;
+      background: white;
+      box-shadow: 0 8px 20px rgba(11, 42, 53, 0.1);
+    }
+
+    .input-wrapper input:focus + i {
+      color: #0B2A35;
+    }
+
+    .input-wrapper input::placeholder {
+      color: #9AA9B7;
+      font-size: 0.95rem;
+    }
+
+    /* Password visibility toggle */
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #7B8A9B;
+      transition: color 0.3s;
+      z-index: 5;
+    }
+
+    .password-toggle:hover {
+      color: #0B2A35;
+    }
+
+    /* Options row */
+    .form-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .remember-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .remember-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #0B2A35;
+    }
+
+    .remember-checkbox span {
+      color: #3E5566;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .forgot-link {
+      color: #0B2A35;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+
+    .forgot-link:hover {
+      color: #196A5E;
+    }
+
+    /* Login button */
+    .login-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #0B2A35, #12424F);
+      border: none;
+      border-radius: 100px;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .login-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .login-btn:hover {
+      background: linear-gradient(135deg, #12424F, #196A5E);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(11, 42, 53, 0.4);
+    }
+
+    .login-btn:hover::before {
+      left: 100%;
+    }
+
+    .login-btn i {
+      font-size: 1.2rem;
+      transition: transform 0.3s;
+    }
+
+    .login-btn:hover i {
+      transform: translateX(5px);
+    }
+
+    /* Alert messages */
+    .alert {
+      background: #FFE5E5;
+      border-left: 5px solid #FF4D4D;
+      padding: 16px 20px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert i {
+      color: #FF4D4D;
+      font-size: 1.2rem;
+    }
+
+    .alert span {
+      color: #B22234;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    /* Back to site link */
+    .back-link {
+      text-align: center;
+    }
+
+    .back-link a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #5B7282;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 50px;
+      background: #F1F5F9;
+      transition: all 0.3s;
+    }
+
+    .back-link a:hover {
+      background: #0B2A35;
+      color: white;
+      gap: 12px;
+    }
+
+    .back-link a:hover i {
+      color: white;
+    }
+
+    /* Responsive Design */
+
+    /* Tablet (768px - 1024px) */
+    @media (max-width: 1024px) {
+      .login-wrapper {
+        max-width: 900px;
+        min-height: auto;
+      }
+
+      .brand-title {
+        font-size: 2.2rem;
+      }
+
+      .form-box {
+        max-width: 340px;
+      }
+
+      .login-form-container {
+        padding: 48px 32px;
+      }
+    }
+
+    /* Small tablet / Large phone (640px - 768px) */
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      .login-wrapper {
+        flex-direction: column;
+        border-radius: 36px;
+      }
+
+      .login-brand {
+        padding: 32px 28px;
+        text-align: center;
+      }
+
+      .brand-content {
+        align-items: center;
+      }
+
+      .medical-icon {
+        margin-bottom: 24px;
+      }
+
+      .icon-circle {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+      }
+
+      .brand-title {
+        font-size: 2rem;
+        text-align: center;
+      }
+
+      .brand-title span {
+        font-size: 1rem;
+      }
+
+      .brand-features {
+        margin-top: 32px;
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .feature-item {
+        justify-content: center;
+        text-align: left;
+      }
+
+      .login-form-container {
+        padding: 40px 28px;
+      }
+
+      .form-box {
+        max-width: 100%;
+      }
+
+      .form-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .form-header h2 {
+        font-size: 2rem;
+      }
+
+      .form-header p {
+        justify-content: center;
+      }
+
+      .input-wrapper input {
+        padding: 15px 15px 15px 48px;
+      }
+    }
+
+    /* Mobile (480px - 640px) */
+    @media (max-width: 640px) {
+      .login-wrapper {
+        border-radius: 28px;
+      }
+
+      .login-brand {
+        padding: 28px 20px;
+      }
+
+      .icon-circle {
+        width: 42px;
+        height: 42px;
+        font-size: 20px;
+      }
+
+      .brand-title {
+        font-size: 1.8rem;
+      }
+
+      .feature-item {
+        gap: 12px;
+      }
+
+      .feature-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+      }
+
+      .feature-text {
+        font-size: 0.9rem;
+      }
+
+      .feature-text small {
+        font-size: 0.75rem;
+      }
+
+      .login-form-container {
+        padding: 32px 24px;
+      }
+
+      .form-header h2 {
+        font-size: 1.8rem;
+      }
+
+      .form-header p {
+        font-size: 0.9rem;
+        flex-wrap: wrap;
+      }
+
+      .input-wrapper input {
+        padding: 14px 14px 14px 45px;
+        font-size: 0.95rem;
+      }
+
+      .input-label {
+        font-size: 0.85rem;
+      }
+
+      .form-options {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+      }
+
+      .forgot-link {
+        align-self: flex-end;
+      }
+
+      .login-btn {
+        padding: 14px;
+        font-size: 1rem;
+      }
+
+      .alert {
+        padding: 14px 16px;
+      }
+    }
+
+    /* Small mobile (320px - 480px) */
+    @media (max-width: 480px) {
+      body {
+        padding: 8px;
+      }
+
+      .login-wrapper {
+        border-radius: 24px;
+      }
+
+      .login-brand {
+        padding: 24px 16px;
+      }
+
+      .brand-title {
+        font-size: 1.5rem;
+      }
+
+      .brand-title span {
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+      }
+
+      .icon-circle {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        border-radius: 14px;
+      }
+
+      .feature-item {
+        gap: 10px;
+      }
+
+      .feature-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+
+      .feature-text {
+        font-size: 0.8rem;
+      }
+
+      .login-form-container {
+        padding: 28px 20px;
+      }
+
+      .form-header {
+        margin-bottom: 24px;
+      }
+
+      .form-header h2 {
+        font-size: 1.6rem;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      .input-wrapper input {
+        padding: 12px 12px 12px 42px;
+        font-size: 0.9rem;
+        border-radius: 20px;
+      }
+
+      .input-wrapper i {
+        font-size: 0.9rem;
+        left: 14px;
+      }
+
+      .login-btn {
+        padding: 12px;
+        font-size: 0.95rem;
+        border-radius: 30px;
+      }
+
+      .back-link a {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+    }
+
+    /* Extra small devices (below 360px) */
+    @media (max-width: 360px) {
+      .brand-title {
+        font-size: 1.3rem;
+      }
+
+      .brand-title span {
+        font-size: 0.75rem;
+      }
+
+      .feature-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+      }
+
+      .feature-text small {
+        display: none;
+      }
+
+      .form-header h2 {
+        font-size: 1.4rem;
+      }
+
+      .form-header p {
+        font-size: 0.8rem;
+      }
+
+      .form-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .remember-checkbox span {
+        font-size: 0.85rem;
+      }
+
+      .forgot-link {
+        font-size: 0.85rem;
+      }
+
+      .alert {
+        padding: 10px 12px;
+      }
+
+      .alert i {
+        font-size: 1rem;
+      }
+
+      .alert span {
+        font-size: 0.85rem;
+      }
+    }
+
+    /* Landscape mode for mobile */
+    @media (max-height: 600px) and (orientation: landscape) {
+      .login-wrapper {
+        min-height: auto;
+      }
+
+      .login-brand {
+        padding: 20px 28px;
+      }
+
+      .brand-features {
+        flex-direction: row;
+        flex-wrap: wrap;
+        margin-top: 20px;
+      }
+
+      .feature-item {
+        flex: 1 1 auto;
+        min-width: 180px;
+      }
+
+      .login-form-container {
+        padding: 28px 32px;
+      }
+    }
+
+    /* High-end tablets in landscape */
+    @media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+      .login-wrapper {
+        max-width: 1100px;
+      }
+
+      .brand-title {
+        font-size: 2.4rem;
+      }
+
+      .form-box {
+        max-width: 360px;
+      }
+    }
+
+    /* Loading state for button (optional) */
+    .login-btn.loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .login-btn.loading i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Success state styling */
+    .alert-success {
+      background: #E3F7E9;
+      border-left-color: #48BB78;
+    }
+
+    .alert-success i {
+      color: #48BB78;
+    }
+
+    .alert-success span {
+      color: #1F7A3D;
+    }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="icon">ডা·স</div>
-      <h2>অ্যাডমিন প্যানেল</h2>
-      <p>ডাক্তারের নিয়ন্ত্রণ কেন্দ্র</p>
+  <!-- Floating decorative shapes -->
+  <div class="floating-shape shape-1"></div>
+  <div class="floating-shape shape-2"></div>
+  <div class="floating-shape shape-3"></div>
+
+  <div class="login-wrapper">
+    <!-- Left side - Medical Branding -->
+    <div class="login-brand">
+      <div class="brand-content">
+        <div class="medical-icon">
+          <div class="icon-circle"><i class="fas fa-stethoscope"></i></div>
+          <div class="icon-circle"><i class="fas fa-heartbeat"></i></div>
+          <div class="icon-circle"><i class="fas fa-hospital"></i></div>
+        </div>
+        
+        <h1 class="brand-title">
+          ডাক্তার প্যানেল
+          <span>ADMIN DASHBOARD</span>
+        </h1>
+
+        <div class="brand-features">
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+            <div class="feature-text">
+              সুরক্ষিত অ্যাক্সেস
+              <small>২-স্তর যাচাইকরণ</small>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="feature-text">
+              সম্পূর্ণ নিয়ন্ত্রণ
+              <small>অ্যাপয়েন্টমেন্ট ও রোগী ব্যবস্থাপনা</small>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><i class="fas fa-clock"></i></div>
+            <div class="feature-text">
+              ২৪/৭ মনিটরিং
+              <small>রিয়েল-টাইম আপডেট</small>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    {% if messages %}
-      {% for msg in messages %}
-        <div class="alert-error"><i class="fas fa-exclamation-circle"></i> {{ msg }}</div>
-      {% endfor %}
-    {% endif %}
+    <!-- Right side - Login Form -->
+    <div class="login-form-container">
+      <div class="form-box">
+        <div class="form-header">
+          <h2>স্বাগতম</h2>
+          <p><i class="fas fa-lock"></i> অ্যাডমিন প্যানেলে প্রবেশ করুন</p>
+        </div>
 
-    <form method="POST">
-      {% csrf_token %}
-      <div class="form-group">
-        <label>ব্যবহারকারী নাম</label>
-        <div class="input-wrap">
-          <i class="fas fa-user"></i>
-          <input type="text" name="username" placeholder="Username" required autofocus/>
+        <!-- Django messages with enhanced styling -->
+        {% if messages %}
+          {% for msg in messages %}
+            <div class="alert {% if 'success' in msg.tags %}alert-success{% endif %}">
+              <i class="fas {% if 'success' in msg.tags %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+              <span>{{ msg }}</span>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="POST" id="loginForm">
+          {% csrf_token %}
+          
+          <!-- Username field -->
+          <div class="input-group">
+            <label class="input-label">ব্যবহারকারীর নাম</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user-md"></i>
+              <input type="text" 
+                     name="username" 
+                     placeholder="আপনার ইউজারনেম লিখুন" 
+                     required 
+                     autofocus
+                     autocomplete="username">
+            </div>
+          </div>
+
+          <!-- Password field with toggle -->
+          <div class="input-group">
+            <label class="input-label">পাসওয়ার্ড</label>
+            <div class="input-wrapper">
+              <i class="fas fa-key"></i>
+              <input type="password" 
+                     name="password" 
+                     id="passwordInput"
+                     placeholder="••••••••" 
+                     required
+                     autocomplete="current-password">
+              <i class="fas fa-eye-slash password-toggle" id="togglePassword" onclick="togglePassword()"></i>
+            </div>
+          </div>
+
+          <!-- Options row -->
+          <div class="form-options">
+            <label class="remember-checkbox">
+              <input type="checkbox" name="remember"> 
+              <span>মনে রাখুন</span>
+            </label>
+          </div>
+
+          <!-- Login button -->
+          <button type="submit" class="login-btn" id="submitBtn">
+            <span>লগইন করুন</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </form>
+
+        <!-- Back to site link -->
+        <div class="back-link">
+          <a href="/">
+            <i class="fas fa-arrow-left"></i> 
+            মূল সাইটে ফিরুন
+          </a>
         </div>
       </div>
-      <div class="form-group">
-        <label>পাসওয়ার্ড</label>
-        <div class="input-wrap">
-          <i class="fas fa-lock"></i>
-          <input type="password" name="password" placeholder="Password" required/>
-        </div>
-      </div>
-      <button type="submit" class="btn-login">
-        <i class="fas fa-sign-in-alt"></i> লগইন করুন
-      </button>
-    </form>
-    <div class="back-link"><a href="/"><i class="fas fa-arrow-left"></i> সাইটে ফিরুন</a></div>
+    </div>
   </div>
+
+  <!-- JavaScript for password toggle and form enhancements -->
+  <script>
+    // Password visibility toggle
+    function togglePassword() {
+      const passwordInput = document.getElementById('passwordInput');
+      const toggleIcon = document.getElementById('togglePassword');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+      } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+      }
+    }
+
+    // Form submission with loading state
+    document.getElementById('loginForm')?.addEventListener('submit', function(e) {
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.classList.add('loading');
+      submitBtn.innerHTML = '<span>প্রবেশ করা হচ্ছে...</span><i class="fas fa-spinner"></i>';
+      
+      // Remove loading state after 2 seconds (for demo)
+      // In production, this will be removed after form submission completes
+      setTimeout(() => {
+        submitBtn.classList.remove('loading');
+        submitBtn.innerHTML = '<span>লগইন করুন</span><i class="fas fa-arrow-right"></i>';
+      }, 2000);
+    });
+
+    // Auto-hide alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(alert => {
+        setTimeout(() => {
+          alert.style.transition = 'opacity 0.5s';
+          alert.style.opacity = '0';
+          setTimeout(() => alert.remove(), 500);
+        }, 5000);
+      });
+    });
+
+    // Input focus effects
+    const inputs = document.querySelectorAll('.input-wrapper input');
+    inputs.forEach(input => {
+      input.addEventListener('focus', function() {
+        this.parentElement.style.transform = 'scale(1.02)';
+      });
+      
+      input.addEventListener('blur', function() {
+        this.parentElement.style.transform = 'scale(1)';
+      });
+    });
+
+    // Prevent form resubmission on page refresh
+    if (window.history.replaceState) {
+      window.history.replaceState(null, null, window.location.href);
+    }
+  </script>
 </body>
 </html>

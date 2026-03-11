@@ -1,0 +1,202 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}রেটিং বার ব্যবস্থাপনা{% endblock %}
+{% block page_title %}রেটিং বার ব্যবস্থাপনা{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-chart-bar"></i> রেটিং বার</h1>
+    <div class="breadcrumb">
+        <a href="{% url 'admin_dashboard' %}">ড্যাশবোর্ড</a> / রেটিং বার
+    </div>
+</div>
+
+<!-- Add New Button -->
+<div style="margin-bottom: 20px;">
+    <button class="btn btn-primary" onclick="openModal('addModal')">
+        <i class="fas fa-plus"></i> নতুন রেটিং বার যোগ করুন
+    </button>
+</div>
+
+<!-- Items Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th>স্টার</th>
+                    <th>শতাংশ (%)</th>
+                    <th>প্রিভিউ</th>
+                    <th>অ্যাকশন</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.stars }} ★</td>
+                    <td>{{ item.percentage }}%</td>
+                    <td style="min-width: 200px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span>{{ item.stars }}★</span>
+                            <div style="flex: 1; height: 8px; background: #eee; border-radius: 4px;">
+                                <div style="width: {{ item.percentage }}%; height: 8px; background: #2e7d32; border-radius: 4px;"></div>
+                            </div>
+                            <span>{{ item.percentage }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <!-- Edit Button -->
+                            <button class="btn btn-sm btn-warning" onclick='openEditModal({{ item.pk|safe }}, {{ item.stars }}, {{ item.percentage }})'>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            
+                            <!-- Delete Button -->
+                            <button class="btn btn-sm btn-danger" onclick="confirmDelete({{ item.pk }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="empty-state">
+                        <i class="fas fa-chart-bar"></i>
+                        <p>কোনো রেটিং বার যোগ করা হয়নি</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">নতুন রেটিং বার যোগ করুন</h3>
+            <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>স্টার <span class="text-muted">*</span></label>
+                    <select name="stars" class="form-control" required>
+                        <option value="">নির্বাচন করুন</option>
+                        <option value="5">৫ ★</option>
+                        <option value="4">৪ ★</option>
+                        <option value="3">৩ ★</option>
+                        <option value="2">২ ★</option>
+                        <option value="1">১ ★</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>শতাংশ (%) <span class="text-muted">*</span></label>
+                    <input type="number" name="percentage" class="form-control" required min="0" max="100" step="1" placeholder="যেমন: 82">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>প্রিভিউ</label>
+                <div id="preview" style="padding: 10px; background: #f5f5f5; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="previewStars">৫★</span>
+                        <div style="flex: 1; height: 8px; background: #ddd; border-radius: 4px;">
+                            <div id="previewBar" style="width: 0%; height: 8px; background: #2e7d32; border-radius: 4px;"></div>
+                        </div>
+                        <span id="previewPercent">০%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">বাতিল</button>
+                <button type="submit" class="btn btn-primary">সংরক্ষণ করুন</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">রেটিং বার সম্পাদনা করুন</h3>
+            <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+        </div>
+        <form method="POST" id="editForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="pk" id="edit_id">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>স্টার <span class="text-muted">*</span></label>
+                    <select name="stars" id="edit_stars" class="form-control" required>
+                        <option value="5">৫ ★</option>
+                        <option value="4">৪ ★</option>
+                        <option value="3">৩ ★</option>
+                        <option value="2">২ ★</option>
+                        <option value="1">১ ★</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>শতাংশ (%) <span class="text-muted">*</span></label>
+                    <input type="number" name="percentage" id="edit_percentage" class="form-control" required min="0" max="100" step="1">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">বাতিল</button>
+                <button type="submit" class="btn btn-primary">আপডেট করুন</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Form (hidden) -->
+<form method="POST" id="deleteForm" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="pk" id="delete_id">
+</form>
+
+<script>
+// Preview functionality for add modal
+document.querySelector('select[name="stars"]')?.addEventListener('change', updatePreview);
+document.querySelector('input[name="percentage"]')?.addEventListener('input', updatePreview);
+
+function updatePreview() {
+    const stars = document.querySelector('select[name="stars"]').value;
+    const percentage = document.querySelector('input[name="percentage"]').value;
+    
+    if (stars) {
+        document.getElementById('previewStars').textContent = stars + '★';
+    }
+    if (percentage) {
+        document.getElementById('previewPercent').textContent = percentage + '%';
+        document.getElementById('previewBar').style.width = percentage + '%';
+    }
+}
+
+function openEditModal(id, stars, percentage) {
+    document.getElementById('edit_id').value = id;
+    document.getElementById('edit_stars').value = stars;
+    document.getElementById('edit_percentage').value = percentage;
+    openModal('editModal');
+}
+
+function confirmDelete(id) {
+    if (confirm('আপনি কি নিশ্চিতভাবে মুছে ফেলতে চান?')) {
+        document.getElementById('delete_id').value = id;
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}

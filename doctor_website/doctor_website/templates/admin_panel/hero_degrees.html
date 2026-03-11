@@ -1,0 +1,184 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}হিরো ডিগ্রি ব্যবস্থাপনা{% endblock %}
+{% block page_title %}হিরো ডিগ্রি ব্যবস্থাপনা{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-graduation-cap"></i> হিরো ডিগ্রি</h1>
+    <div class="breadcrumb">
+        <a href="{% url 'admin_dashboard' %}">ড্যাশবোর্ড</a> / হিরো ডিগ্রি
+    </div>
+</div>
+
+<!-- Add New Button -->
+<div style="margin-bottom: 20px;">
+    <button class="btn btn-primary" onclick="openModal('addModal')">
+        <i class="fas fa-plus"></i> নতুন হিরো ডিগ্রি যোগ করুন
+    </button>
+</div>
+
+<!-- Items Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th>ক্রম</th>
+                    <th>ডিগ্রির লেবেল</th>
+                    <th>স্ট্যাটাস</th>
+                    <th>অ্যাকশন</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.order }}</td>
+                    <td>{{ item.label }}</td>
+                    <td>
+                        {% if item.is_active %}
+                            <span class="badge badge-success">সক্রিয়</span>
+                        {% else %}
+                            <span class="badge badge-danger">নিষ্ক্রিয়</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <!-- Toggle Active/Inactive -->
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle">
+                                <input type="hidden" name="pk" value="{{ item.pk }}">
+                                <button type="submit" class="btn btn-sm btn-secondary" title="স্ট্যাটাস পরিবর্তন">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </form>
+                            
+                            <!-- Edit Button -->
+                            <button class="btn btn-sm btn-warning" onclick='openEditModal({{ item.pk|safe }}, "{{ item.label|escapejs }}", {{ item.order }}, {{ item.is_active|yesno:"true,false" }})'>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            
+                            <!-- Delete Button -->
+                            <button class="btn btn-sm btn-danger" onclick="confirmDelete({{ item.pk }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="empty-state">
+                        <i class="fas fa-graduation-cap"></i>
+                        <p>কোনো হিরো ডিগ্রি যোগ করা হয়নি</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">নতুন হিরো ডিগ্রি যোগ করুন</h3>
+            <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            
+            <div class="form-group">
+                <label>ডিগ্রির লেবেল <span class="text-muted">*</span></label>
+                <input type="text" name="label" class="form-control" required placeholder="যেমন: MBBS, FCPS, MRCOG">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>ক্রম</label>
+                    <input type="number" name="order" class="form-control" value="0">
+                </div>
+                <div class="form-group">
+                    <label style="display: block;">স্ট্যাটাস</label>
+                    <label class="toggle">
+                        <input type="checkbox" name="is_active" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span style="margin-left: 8px;">সক্রিয়</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">বাতিল</button>
+                <button type="submit" class="btn btn-primary">সংরক্ষণ করুন</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">হিরো ডিগ্রি সম্পাদনা করুন</h3>
+            <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+        </div>
+        <form method="POST" id="editForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="pk" id="edit_id">
+            
+            <div class="form-group">
+                <label>ডিগ্রির লেবেল <span class="text-muted">*</span></label>
+                <input type="text" name="label" id="edit_label" class="form-control" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>ক্রম</label>
+                    <input type="number" name="order" id="edit_order" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label style="display: block;">স্ট্যাটাস</label>
+                    <label class="toggle">
+                        <input type="checkbox" name="is_active" id="edit_is_active">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span style="margin-left: 8px;">সক্রিয়</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">বাতিল</button>
+                <button type="submit" class="btn btn-primary">আপডেট করুন</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Form (hidden) -->
+<form method="POST" id="deleteForm" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="pk" id="delete_id">
+</form>
+
+<script>
+function openEditModal(id, label, order, isActive) {
+    document.getElementById('edit_id').value = id;
+    document.getElementById('edit_label').value = label;
+    document.getElementById('edit_order').value = order;
+    document.getElementById('edit_is_active').checked = isActive;
+    openModal('editModal');
+}
+
+function confirmDelete(id) {
+    if (confirm('আপনি কি নিশ্চিতভাবে মুছে ফেলতে চান?')) {
+        document.getElementById('delete_id').value = id;
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}

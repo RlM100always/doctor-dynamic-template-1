@@ -71,6 +71,36 @@ def site_settings(request):
         return redirect('admin_login')
     obj, _ = SiteSettings.objects.get_or_create(pk=1)
     if request.method == 'POST':
+        # Check if this is a HeroDegree action
+        hero_action = request.POST.get('hero_action')
+        
+        if hero_action == 'add_hero_degree':
+            HeroDegree.objects.create(
+                label=request.POST.get('label'),
+                icon_class=request.POST.get('icon_class', 'fas fa-certificate'),
+                order=int(request.POST.get('order', 0)),
+                is_active=request.POST.get('is_active') == 'on'
+            )
+            messages.success(request, 'হিরো ডিগ্রি যোগ করা হয়েছে।')
+            return redirect('admin_site_settings')
+            
+        elif hero_action == 'edit_hero_degree':
+            hero_id = request.POST.get('hero_id')
+            hero = get_object_or_404(HeroDegree, pk=hero_id)
+            hero.label = request.POST.get('label')
+            hero.icon_class = request.POST.get('icon_class', 'fas fa-certificate')
+            hero.order = int(request.POST.get('order', 0))
+            hero.is_active = request.POST.get('is_active') == 'on'
+            hero.save()
+            messages.success(request, 'হিরো ডিগ্রি আপডেট করা হয়েছে।')
+            return redirect('admin_site_settings')
+            
+        elif hero_action == 'delete_hero_degree':
+            hero_id = request.POST.get('hero_id')
+            HeroDegree.objects.filter(pk=hero_id).delete()
+            messages.success(request, 'হিরো ডিগ্রি মুছে ফেলা হয়েছে।')
+            return redirect('admin_site_settings')
+
         obj.doctor_name = request.POST.get('doctor_name', obj.doctor_name)
         obj.doctor_name_en = request.POST.get('doctor_name_en', obj.doctor_name_en)
         obj.specialty = request.POST.get('specialty', obj.specialty)
@@ -709,3 +739,410 @@ def manage_media(request):
         return redirect('admin_media')
     items = MediaCoverage.objects.all()
     return render(request, 'admin_panel/media.html', {'items': items})
+
+
+# ── HERO DEGREES ─────────────────────────────────────────────────────────────
+@login_required(login_url='/admin-panel/login/')
+def manage_hero_degrees(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        pk = request.POST.get('pk')
+        
+        if action == 'add':
+            HeroDegree.objects.create(
+                label=request.POST.get('label'),
+                order=int(request.POST.get('order', 0)),
+                is_active=request.POST.get('is_active') == 'on'
+            )
+            messages.success(request, 'হিরো ডিগ্রি যোগ করা হয়েছে।')
+            
+        elif action == 'edit':
+            obj = get_object_or_404(HeroDegree, pk=pk)
+            obj.label = request.POST.get('label')
+            obj.order = int(request.POST.get('order', 0))
+            obj.is_active = request.POST.get('is_active') == 'on'
+            obj.save()
+            messages.success(request, 'হিরো ডিগ্রি আপডেট করা হয়েছে।')
+            
+        elif action == 'delete':
+            HeroDegree.objects.filter(pk=pk).delete()
+            messages.success(request, 'হিরো ডিগ্রি মুছে ফেলা হয়েছে।')
+            
+        elif action == 'toggle':
+            obj = HeroDegree.objects.get(pk=pk)
+            obj.is_active = not obj.is_active
+            obj.save()
+            
+        return redirect('admin_hero_degrees')
+        
+    items = HeroDegree.objects.all().order_by('order')
+    return render(request, 'admin_panel/hero_degrees.html', {'items': items})
+
+
+# ── RATING BARS ─────────────────────────────────────────────────────────────
+@login_required(login_url='/admin-panel/login/')
+def manage_rating_bars(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        pk = request.POST.get('pk')
+        
+        if action == 'add':
+            RatingBar.objects.create(
+                stars=int(request.POST.get('stars')),
+                percentage=int(request.POST.get('percentage'))
+            )
+            messages.success(request, 'রেটিং বার যোগ করা হয়েছে।')
+            
+        elif action == 'edit':
+            obj = get_object_or_404(RatingBar, pk=pk)
+            obj.stars = int(request.POST.get('stars'))
+            obj.percentage = int(request.POST.get('percentage'))
+            obj.save()
+            messages.success(request, 'রেটিং বার আপডেট করা হয়েছে।')
+            
+        elif action == 'delete':
+            RatingBar.objects.filter(pk=pk).delete()
+            messages.success(request, 'রেটিং বার মুছে ফেলা হয়েছে।')
+            
+        return redirect('admin_rating_bars')
+        
+    items = RatingBar.objects.all().order_by('-stars')
+    return render(request, 'admin_panel/rating_bars.html', {'items': items})
+
+
+# ── TRUST CHIPS ─────────────────────────────────────────────────────────────
+@login_required(login_url='/admin-panel/login/')
+def manage_trust_chips(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        pk = request.POST.get('pk')
+        
+        if action == 'add':
+            TrustChip.objects.create(
+                icon_class=request.POST.get('icon_class', 'fas fa-award'),
+                text=request.POST.get('text'),
+                order=int(request.POST.get('order', 0)),
+                is_active=request.POST.get('is_active') == 'on'
+            )
+            messages.success(request, 'ট্রাস্ট চিপ যোগ করা হয়েছে।')
+            
+        elif action == 'edit':
+            obj = get_object_or_404(TrustChip, pk=pk)
+            obj.icon_class = request.POST.get('icon_class')
+            obj.text = request.POST.get('text')
+            obj.order = int(request.POST.get('order', 0))
+            obj.is_active = request.POST.get('is_active') == 'on'
+            obj.save()
+            messages.success(request, 'ট্রাস্ট চিপ আপডেট করা হয়েছে।')
+            
+        elif action == 'delete':
+            TrustChip.objects.filter(pk=pk).delete()
+            messages.success(request, 'ট্রাস্ট চিপ মুছে ফেলা হয়েছে।')
+            
+        elif action == 'toggle':
+            obj = TrustChip.objects.get(pk=pk)
+            obj.is_active = not obj.is_active
+            obj.save()
+            
+        return redirect('admin_trust_chips')
+        
+    items = TrustChip.objects.all().order_by('order')
+    return render(request, 'admin_panel/trust_chips.html', {'items': items})
+
+
+# ── ABOUT HIGHLIGHTS ─────────────────────────────────────────────────────────
+@login_required(login_url='/admin-panel/login/')
+def manage_about_highlights(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        pk = request.POST.get('pk')
+        
+        if action == 'add':
+            AboutHighlight.objects.create(
+                icon_class=request.POST.get('icon_class', 'fas fa-graduation-cap'),
+                title=request.POST.get('title'),
+                description=request.POST.get('description'),
+                order=int(request.POST.get('order', 0)),
+                is_active=request.POST.get('is_active') == 'on'
+            )
+            messages.success(request, 'পরিচিতির হাইলাইট যোগ করা হয়েছে।')
+            
+        elif action == 'edit':
+            obj = get_object_or_404(AboutHighlight, pk=pk)
+            obj.icon_class = request.POST.get('icon_class')
+            obj.title = request.POST.get('title')
+            obj.description = request.POST.get('description')
+            obj.order = int(request.POST.get('order', 0))
+            obj.is_active = request.POST.get('is_active') == 'on'
+            obj.save()
+            messages.success(request, 'পরিচিতির হাইলাইট আপডেট করা হয়েছে।')
+            
+        elif action == 'delete':
+            AboutHighlight.objects.filter(pk=pk).delete()
+            messages.success(request, 'পরিচিতির হাইলাইট মুছে ফেলা হয়েছে।')
+            
+        elif action == 'toggle':
+            obj = AboutHighlight.objects.get(pk=pk)
+            obj.is_active = not obj.is_active
+            obj.save()
+            
+        return redirect('admin_about_highlights')
+        
+    items = AboutHighlight.objects.all().order_by('order')
+    return render(request, 'admin_panel/about_highlights.html', {'items': items})
+
+
+# ── TIME SLOTS (AppointmentSlot) ─────────────────────────────────────────────
+@login_required(login_url='/admin-panel/login/')
+def manage_time_slots(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        pk = request.POST.get('pk')
+        
+        if action == 'add':
+            AppointmentSlot.objects.create(
+                label=request.POST.get('label'),
+                value=request.POST.get('value'),
+                order=int(request.POST.get('order', 0)),
+                is_active=request.POST.get('is_active') == 'on'
+            )
+            messages.success(request, 'সময় স্লট যোগ করা হয়েছে।')
+            
+        elif action == 'edit':
+            obj = get_object_or_404(AppointmentSlot, pk=pk)
+            obj.label = request.POST.get('label')
+            obj.value = request.POST.get('value')
+            obj.order = int(request.POST.get('order', 0))
+            obj.is_active = request.POST.get('is_active') == 'on'
+            obj.save()
+            messages.success(request, 'সময় স্লট আপডেট করা হয়েছে।')
+            
+        elif action == 'delete':
+            AppointmentSlot.objects.filter(pk=pk).delete()
+            messages.success(request, 'সময় স্লট মুছে ফেলা হয়েছে।')
+            
+        elif action == 'toggle':
+            obj = AppointmentSlot.objects.get(pk=pk)
+            obj.is_active = not obj.is_active
+            obj.save()
+            
+        return redirect('admin_time_slots')
+        
+    items = AppointmentSlot.objects.all().order_by('order')
+    return render(request, 'admin_panel/time_slots.html', {'items': items})
+
+
+# ── FEE INFO ────────────────────────────────────────────────────────────────
+@login_required(login_url='/admin-panel/login/')
+def manage_fee_info(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        pk = request.POST.get('pk')
+        
+        if action == 'add':
+            FeeInfo.objects.create(
+                icon_class=request.POST.get('icon_class', 'fas fa-check-circle'),
+                text=request.POST.get('text'),
+                order=int(request.POST.get('order', 0)),
+                is_active=request.POST.get('is_active') == 'on'
+            )
+            messages.success(request, 'ফি তথ্য যোগ করা হয়েছে।')
+            
+        elif action == 'edit':
+            obj = get_object_or_404(FeeInfo, pk=pk)
+            obj.icon_class = request.POST.get('icon_class')
+            obj.text = request.POST.get('text')
+            obj.order = int(request.POST.get('order', 0))
+            obj.is_active = request.POST.get('is_active') == 'on'
+            obj.save()
+            messages.success(request, 'ফি তথ্য আপডেট করা হয়েছে।')
+            
+        elif action == 'delete':
+            FeeInfo.objects.filter(pk=pk).delete()
+            messages.success(request, 'ফি তথ্য মুছে ফেলা হয়েছে।')
+            
+        elif action == 'toggle':
+            obj = FeeInfo.objects.get(pk=pk)
+            obj.is_active = not obj.is_active
+            obj.save()
+            
+        return redirect('admin_fee_info')
+        
+    items = FeeInfo.objects.all().order_by('order')
+    return render(request, 'admin_panel/fee_info.html', {'items': items})
+
+
+
+# ── ICON LIBRARY ────────────────────────────────────────────────────────────
+@login_required(login_url='/admin-panel/login/')
+def icon_library(request):
+    if not is_admin(request.user):
+        return redirect('admin_login')
+    
+    # Organized list of Font Awesome 5 icons by category
+    icons = {
+        'Medical & Health': [
+            {'name': 'Stethoscope', 'class': 'fas fa-stethoscope'},
+            {'name': 'Hospital', 'class': 'fas fa-hospital'},
+            {'name': 'Hospital Alt', 'class': 'fas fa-hospital-alt'},
+            {'name': 'Clinic Medical', 'class': 'fas fa-clinic-medical'},
+            {'name': 'User MD', 'class': 'fas fa-user-md'},
+            {'name': 'User Nurse', 'class': 'fas fa-user-nurse'},
+            {'name': 'Ambulance', 'class': 'fas fa-ambulance'},
+            {'name': 'Heart', 'class': 'fas fa-heart'},
+            {'name': 'Heartbeat', 'class': 'fas fa-heartbeat'},
+            {'name': 'Pills', 'class': 'fas fa-pills'},
+            {'name': 'Tablets', 'class': 'fas fa-tablets'},
+            {'name': 'Syringe', 'class': 'fas fa-syringe'},
+            {'name': 'Vial', 'class': 'fas fa-vial'},
+            {'name': 'Band Aid', 'class': 'fas fa-band-aid'},
+            {'name': 'Crutch', 'class': 'fas fa-crutch'},
+            {'name': 'First Aid', 'class': 'fas fa-first-aid'},
+            {'name': 'Tooth', 'class': 'fas fa-tooth'},
+            {'name': 'Bone', 'class': 'fas fa-bone'},
+            {'name': 'Lungs', 'class': 'fas fa-lungs'},
+            {'name': 'Brain', 'class': 'fas fa-brain'},
+            {'name': 'Eye', 'class': 'fas fa-eye'},
+            {'name': 'Ear', 'class': 'fas fa-ear-deaf'},
+            {'name': 'Microscope', 'class': 'fas fa-microscope'},
+            {'name': 'X-Ray', 'class': 'fas fa-x-ray'},
+            {'name': 'Procedures', 'class': 'fas fa-procedures'},
+            {'name': 'Baby', 'class': 'fas fa-baby'},
+            {'name': 'Baby Carriage', 'class': 'fas fa-baby-carriage'},
+            {'name': 'Pregnancy', 'class': 'fas fa-pregnancy'},
+            {'name': 'Female', 'class': 'fas fa-female'},
+            {'name': 'Male', 'class': 'fas fa-male'},
+            {'name': 'Weight Scale', 'class': 'fas fa-weight-scale'},
+            {'name': 'Thermometer', 'class': 'fas fa-thermometer-half'},
+        ],
+        
+        'Education & Awards': [
+            {'name': 'Graduation Cap', 'class': 'fas fa-graduation-cap'},
+            {'name': 'Award', 'class': 'fas fa-award'},
+            {'name': 'Medal', 'class': 'fas fa-medal'},
+            {'name': 'Trophy', 'class': 'fas fa-trophy'},
+            {'name': 'Scroll', 'class': 'fas fa-scroll'},
+            {'name': 'Certificate', 'class': 'fas fa-certificate'},
+            {'name': 'Ribbon', 'class': 'fas fa-ribbon'},
+            {'name': 'Star', 'class': 'fas fa-star'},
+            {'name': 'Crown', 'class': 'fas fa-crown'},
+            {'name': 'Book', 'class': 'fas fa-book'},
+            {'name': 'Book Open', 'class': 'fas fa-book-open'},
+            {'name': 'Library', 'class': 'fas fa-library'},
+            {'name': 'Pen', 'class': 'fas fa-pen'},
+            {'name': 'Pen Fancy', 'class': 'fas fa-pen-fancy'},
+            {'name': 'Pen Alt', 'class': 'fas fa-pen-alt'},
+        ],
+        
+        'Communication': [
+            {'name': 'Phone', 'class': 'fas fa-phone'},
+            {'name': 'Phone Alt', 'class': 'fas fa-phone-alt'},
+            {'name': 'Envelope', 'class': 'fas fa-envelope'},
+            {'name': 'Envelope Open', 'class': 'fas fa-envelope-open'},
+            {'name': 'WhatsApp', 'class': 'fab fa-whatsapp'},
+            {'name': 'Facebook', 'class': 'fab fa-facebook'},
+            {'name': 'Facebook F', 'class': 'fab fa-facebook-f'},
+            {'name': 'Messenger', 'class': 'fab fa-facebook-messenger'},
+            {'name': 'Twitter', 'class': 'fab fa-twitter'},
+            {'name': 'Instagram', 'class': 'fab fa-instagram'},
+            {'name': 'YouTube', 'class': 'fab fa-youtube'},
+            {'name': 'LinkedIn', 'class': 'fab fa-linkedin'},
+            {'name': 'SMS', 'class': 'fas fa-sms'},
+            {'name': 'Comment', 'class': 'fas fa-comment'},
+            {'name': 'Comments', 'class': 'fas fa-comments'},
+            {'name': 'Comment Medical', 'class': 'fas fa-comment-medical'},
+        ],
+        
+        'Business & Location': [
+            {'name': 'Building', 'class': 'fas fa-building'},
+            {'name': 'Hospital Alt', 'class': 'fas fa-hospital-alt'},
+            {'name': 'Clinic', 'class': 'fas fa-clinic-medical'},
+            {'name': 'Map Marker', 'class': 'fas fa-map-marker-alt'},
+            {'name': 'Map', 'class': 'fas fa-map'},
+            {'name': 'Map Pin', 'class': 'fas fa-map-pin'},
+            {'name': 'Directions', 'class': 'fas fa-directions'},
+            {'name': 'Location', 'class': 'fas fa-location-dot'},
+            {'name': 'Clock', 'class': 'fas fa-clock'},
+            {'name': 'Calendar', 'class': 'fas fa-calendar'},
+            {'name': 'Calendar Alt', 'class': 'fas fa-calendar-alt'},
+            {'name': 'Calendar Check', 'class': 'fas fa-calendar-check'},
+            {'name': 'Calendar Times', 'class': 'fas fa-calendar-times'},
+            {'name': 'Money Bill', 'class': 'fas fa-money-bill'},
+            {'name': 'Money Bill Alt', 'class': 'fas fa-money-bill-alt'},
+            {'name': 'Credit Card', 'class': 'fas fa-credit-card'},
+            {'name': 'Barcode', 'class': 'fas fa-barcode'},
+            {'name': 'QR Code', 'class': 'fas fa-qrcode'},
+        ],
+        
+        'Interface & Actions': [
+            {'name': 'Check Circle', 'class': 'fas fa-check-circle'},
+            {'name': 'Check', 'class': 'fas fa-check'},
+            {'name': 'Times Circle', 'class': 'fas fa-times-circle'},
+            {'name': 'Times', 'class': 'fas fa-times'},
+            {'name': 'Info Circle', 'class': 'fas fa-info-circle'},
+            {'name': 'Info', 'class': 'fas fa-info'},
+            {'name': 'Exclamation Circle', 'class': 'fas fa-exclamation-circle'},
+            {'name': 'Exclamation', 'class': 'fas fa-exclamation'},
+            {'name': 'Question Circle', 'class': 'fas fa-question-circle'},
+            {'name': 'Question', 'class': 'fas fa-question'},
+            {'name': 'Plus Circle', 'class': 'fas fa-plus-circle'},
+            {'name': 'Plus', 'class': 'fas fa-plus'},
+            {'name': 'Minus Circle', 'class': 'fas fa-minus-circle'},
+            {'name': 'Minus', 'class': 'fas fa-minus'},
+            {'name': 'Edit', 'class': 'fas fa-edit'},
+            {'name': 'Pencil Alt', 'class': 'fas fa-pencil-alt'},
+            {'name': 'Trash', 'class': 'fas fa-trash'},
+            {'name': 'Trash Alt', 'class': 'fas fa-trash-alt'},
+            {'name': 'Save', 'class': 'fas fa-save'},
+            {'name': 'Copy', 'class': 'fas fa-copy'},
+            {'name': 'Paste', 'class': 'fas fa-paste'},
+            {'name': 'Cut', 'class': 'fas fa-cut'},
+            {'name': 'Search', 'class': 'fas fa-search'},
+            {'name': 'Cog', 'class': 'fas fa-cog'},
+            {'name': 'Cogs', 'class': 'fas fa-cogs'},
+            {'name': 'Upload', 'class': 'fas fa-upload'},
+            {'name': 'Download', 'class': 'fas fa-download'},
+        ],
+        
+        'File & Media': [
+            {'name': 'File', 'class': 'fas fa-file'},
+            {'name': 'File Alt', 'class': 'fas fa-file-alt'},
+            {'name': 'File Medical', 'class': 'fas fa-file-medical'},
+            {'name': 'File Medical Alt', 'class': 'fas fa-file-medical-alt'},
+            {'name': 'File Pdf', 'class': 'fas fa-file-pdf'},
+            {'name': 'File Word', 'class': 'fas fa-file-word'},
+            {'name': 'File Excel', 'class': 'fas fa-file-excel'},
+            {'name': 'File Image', 'class': 'fas fa-file-image'},
+            {'name': 'Image', 'class': 'fas fa-image'},
+            {'name': 'Camera', 'class': 'fas fa-camera'},
+            {'name': 'Video', 'class': 'fas fa-video'},
+            {'name': 'Film', 'class': 'fas fa-film'},
+            {'name': 'Play Circle', 'class': 'fas fa-play-circle'},
+            {'name': 'Play', 'class': 'fas fa-play'},
+            {'name': 'Podcast', 'class': 'fas fa-podcast'},
+        ],
+        
+        'Miscellaneous': [
+            {'name': 'Leaf', 'class': 'fas fa-leaf'},
+            {'name': 'Seedling', 'class': 'fas fa-seedling'},
+            {'name': 'Flask', 'class': 'fas fa-flask'},
+            {'name': 'Fire', 'class': 'fas fa-fire'},
+            {'name': 'Water', 'class': 'fas fa-water'},
+            {'name': 'Shield Alt', 'class': 'fas fa-shield-alt'},
+            {'name': 'Shield', 'class': 'fas fa-shield'},
+            {'name': 'Lock', 'class': 'fas fa-lock'},
+            {'name': 'Lock Open', 'class': 'fas fa-lock-open'},
+            {'name': 'Key', 'class': 'fas fa-key'},
+            {'name': 'Globe', 'class': 'fas fa-globe'},
+            {'name': 'Globe Asia', 'class': 'fas fa-globe-asia'},
+            {'name': 'Flag', 'class': 'fas fa-flag'},
+            {'name': 'Hand Heart', 'class': 'fas fa-hand-holding-heart'},
+            {'name': 'Heart Circle', 'class': 'fas fa-heart-circle'},
+            {'name': 'Users', 'class': 'fas fa-users'},
+            {'name': 'User Circle', 'class': 'fas fa-user-circle'},
+            {'name': 'User', 'class': 'fas fa-user'},
+            {'name': 'User Plus', 'class': 'fas fa-user-plus'},
+        ],
+    }
+    
+    return render(request, 'admin_panel/icon_library.html', {'categories': icons})

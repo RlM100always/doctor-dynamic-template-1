@@ -18,6 +18,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'appointments',
+    'django.contrib.sitemaps',
+
 ]
 
 MIDDLEWARE = [
