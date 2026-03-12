@@ -480,7 +480,7 @@ def manage_appointments(request):
     total_filtered = appts.count()
 
     # ── Pagination ──────────────────────────────────────────────────
-    paginator   = Paginator(appts, 10)
+    paginator   = Paginator(appts, 20)
     page_number = request.GET.get('page')
     page_obj    = paginator.get_page(page_number)
 
