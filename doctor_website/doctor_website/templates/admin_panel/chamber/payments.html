@@ -1,0 +1,138 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}পেমেন্ট ও আয়{% endblock %}
+{% block page_title %}চেম্বার — পেমেন্ট{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>আয় ও পেমেন্ট</h1>
+    <div class="breadcrumb"><a href="{% url 'chamber_dashboard' %}">চেম্বার</a> › পেমেন্ট</div>
+  </div>
+  <a href="{% url 'chamber_reports' %}" class="btn btn-secondary"><i class="fas fa-download"></i> রিপোর্ট</a>
+</div>
+
+<div class="stats-grid" style="margin-bottom:20px">
+  <div class="stat-card stat-card--amber">
+    <div class="stat-icon stat-icon--amber"><i class="fas fa-calendar-day"></i></div>
+    <div class="stat-info"><p>৳{{ income_today|floatformat:0 }}</p><span>আজকের আয়</span></div>
+  </div>
+  <div class="stat-card" style="border-left-color:#1976d2">
+    <div class="stat-icon stat-icon--blue"><i class="fas fa-calendar-alt"></i></div>
+    <div class="stat-info"><p>৳{{ income_month|floatformat:0 }}</p><span>এ মাসের আয়</span></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+    <div class="stat-info"><p>৳{{ income_year|floatformat:0 }}</p><span>এ বছরের আয়</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-list" style="color:#2e7d32"></i> সব পেমেন্ট</span>
+  </div>
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>রোগী</th>
+          <th>তারিখ</th>
+          <th>পরামর্শ ফি</th>
+          <th>অতিরিক্ত</th>
+          <th>মোট</th>
+          <th>পদ্ধতি</th>
+          <th>অবস্থা</th>
+          <th>অ্যাকশন</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pay in payments %}
+        <tr>
+          <td>
+            <strong>{{ pay.visit.patient.name }}</strong>
+            <div class="text-muted">{{ pay.visit.patient.phone }}</div>
+          </td>
+          <td>{{ pay.visit.visit_date|date:"d M Y" }}</td>
+          <td>৳{{ pay.consultation_fee|floatformat:0 }}</td>
+          <td>৳{{ pay.additional_charge|floatformat:0 }}</td>
+          <td><strong>৳{{ pay.total_amount|floatformat:0 }}</strong></td>
+          <td>
+            {% if pay.payment_method == 'bkash' %}
+              <span class="badge" style="background:#fce4ec;color:#c2185b"><i class="fas fa-mobile-alt"></i> বিকাশ</span>
+            {% elif pay.payment_method == 'nagad' %}
+              <span class="badge" style="background:#fff3e0;color:#e65100"><i class="fas fa-mobile-alt"></i> নগদ</span>
+            {% else %}
+              <span class="badge badge-success"><i class="fas fa-money-bill"></i> {{ pay.get_payment_method_display }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge {% if pay.payment_status == 'paid' %}badge-success{% elif pay.payment_status == 'due' %}badge-danger{% else %}badge-warning{% endif %}">
+              {{ pay.get_payment_status_display }}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-warning btn-sm btn-icon" onclick="openEditPayModal({{ pay.pk }},{{ pay.consultation_fee }},{{ pay.additional_charge }},'{{ pay.payment_method }}','{{ pay.payment_status }}')">
+              <i class="fas fa-edit"></i>
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8"><div class="empty-state"><i class="fas fa-coins"></i><p>কোনো পেমেন্ট নেই</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit payment modal -->
+<div class="modal-overlay" id="editPayModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-edit" style="color:#f59e0b"></i> পেমেন্ট সম্পাদনা</span>
+      <button class="modal-close" onclick="closeModal('editPayModal')">×</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="pk" id="editPayPk">
+      <div class="form-row">
+        <div class="form-group">
+          <label>পরামর্শ ফি</label>
+          <input type="number" name="consultation_fee" id="editCf" class="form-control" min="0">
+        </div>
+        <div class="form-group">
+          <label>অতিরিক্ত চার্জ</label>
+          <input type="number" name="additional_charge" id="editAc" class="form-control" min="0" value="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>পেমেন্ট পদ্ধতি</label>
+          <select name="payment_method" id="editPm" class="form-control">
+            {% for val,lbl in payment_methods %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>পেমেন্ট অবস্থা</label>
+          <select name="payment_status" id="editPs" class="form-control">
+            {% for val,lbl in payment_statuses %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editPayModal')">বাতিল</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> আপডেট</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function openEditPayModal(pk,cf,ac,pm,ps){
+  document.getElementById('editPayPk').value=pk;
+  document.getElementById('editCf').value=cf;
+  document.getElementById('editAc').value=ac;
+  document.getElementById('editPm').value=pm;
+  document.getElementById('editPs').value=ps;
+  openModal('editPayModal');
+}
+</script>
+{% endblock %}

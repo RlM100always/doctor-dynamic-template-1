@@ -1,0 +1,116 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}{{ patient.name }} — ইতিহাস{% endblock %}
+{% block page_title %}রোগীর ইতিহাস{% endblock %}
+
+{% block content %}
+<style>
+.patient-profile{background:linear-gradient(135deg,#1a4a2e,#2e7d32);color:#fff;border-radius:14px;padding:24px 20px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.p-avatar{width:64px;height:64px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;flex-shrink:0}
+.p-info h2{font-size:22px;font-weight:800}
+.p-info p{opacity:.8;font-size:13px}
+.p-badge{display:inline-block;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 12px;font-size:12px;margin-top:6px}
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:#e0e0e0}
+.tl-item{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px var(--green)}
+.tl-dot.followup{box-shadow:0 0 0 2px #1976d2}
+.tl-box{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.tl-date{font-size:11px;color:#888;margin-bottom:4px}
+.tl-title{font-size:14px;font-weight:700}
+.tl-body{font-size:13px;color:#555;margin-top:4px}
+.total-stat{text-align:center;background:#f9f9f9;border-radius:10px;padding:14px}
+.total-stat .num{font-size:26px;font-weight:800;color:#2e7d32}
+.total-stat .lbl{font-size:12px;color:#888}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>{{ patient.name }}</h1>
+    <div class="breadcrumb"><a href="{% url 'chamber_dashboard' %}">চেম্বার</a> › <a href="{% url 'chamber_patients' %}">রোগী</a> › ইতিহাস</div>
+  </div>
+  <a href="{% url 'chamber_patients' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> ফিরে যান</a>
+</div>
+
+<!-- Profile header -->
+<div class="patient-profile">
+  <div class="p-avatar">{{ patient.name|slice:":1" }}</div>
+  <div class="p-info" style="flex:1">
+    <h2>{{ patient.name }}</h2>
+    <p><i class="fas fa-phone"></i> {{ patient.phone }} &nbsp;|&nbsp;
+       <i class="fas fa-venus-mars"></i> {{ patient.get_gender_display }} &nbsp;|&nbsp;
+       {% if patient.age %}<i class="fas fa-birthday-cake"></i> {{ patient.age }} বছর{% endif %}
+    </p>
+    <p><i class="fas fa-map-marker-alt"></i> {{ patient.get_district_display }}{% if patient.area %}, {{ patient.area }}{% endif %}</p>
+    <span class="p-badge">{{ patient.patient_id }}</span>
+    <span class="p-badge" style="margin-left:6px">প্রথম ভিজিট: {{ patient.first_visit_date|date:"d M Y" }}</span>
+  </div>
+</div>
+
+<!-- Summary stats -->
+<div class="stats-grid" style="margin-bottom:24px">
+  <div class="total-stat">
+    <div class="num">{{ patient.get_total_visits }}</div>
+    <div class="lbl">মোট ভিজিট</div>
+  </div>
+  <div class="total-stat">
+    <div class="num">{{ visits|length }}</div>
+    <div class="lbl">ভিজিট রেকর্ড</div>
+  </div>
+  <div class="total-stat">
+    <div class="num">৳{{ patient.get_total_paid|floatformat:0 }}</div>
+    <div class="lbl">মোট পরিশোধ</div>
+  </div>
+  <div class="total-stat">
+    <div class="num">{% with lv=patient.get_last_visit %}{% if lv %}{{ lv.visit_date|date:"d M" }}{% else %}—{% endif %}{% endwith %}</div>
+    <div class="lbl">শেষ ভিজিট</div>
+  </div>
+</div>
+
+<!-- Visit timeline -->
+<div class="card">
+  <div class="card__header">
+    <span class="card__title"><i class="fas fa-history" style="color:#2e7d32"></i> ভিজিটের ইতিহাস</span>
+    <a href="{% url 'chamber_visits' %}?q={{ patient.phone }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> নতুন ভিজিট</a>
+  </div>
+
+  {% if visits %}
+  <div class="timeline">
+    {% for v in visits %}
+    <div class="tl-item">
+      <div class="tl-dot {% if v.visit_type == 'followup' %}followup{% endif %}"></div>
+      <div class="tl-box">
+        <div class="tl-date">{{ v.visit_date|date:"d F Y, l" }}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+          <span class="tl-title">
+            {% if v.visit_type == 'new' %}
+              <span style="background:#e8f5e9;color:#2e7d32;padding:2px 10px;border-radius:20px;font-size:12px"><i class="fas fa-user-plus"></i> নতুন রোগী</span>
+            {% else %}
+              <span style="background:#e3f2fd;color:#1565c0;padding:2px 10px;border-radius:20px;font-size:12px"><i class="fas fa-redo"></i> ফলো-আপ</span>
+            {% endif %}
+          </span>
+          <div style="display:flex;gap:6px">
+            <a href="{% url 'chamber_prescription' v.pk %}" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-print"></i> প্রেসক্রিপশন</a>
+          </div>
+        </div>
+        {% if v.symptoms %}<div class="tl-body"><strong>লক্ষণ:</strong> {{ v.symptoms }}</div>{% endif %}
+        {% if v.diagnosis %}<div class="tl-body"><strong>রোগ নির্ণয়:</strong> {{ v.diagnosis }}</div>{% endif %}
+        {% with pay=v.get_payment %}
+        {% if pay %}
+        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;font-size:12px">
+          <span style="background:#f5f5f5;padding:3px 10px;border-radius:20px"><i class="fas fa-coins"></i> ৳{{ pay.total_amount|floatformat:0 }}</span>
+          <span style="background:#f5f5f5;padding:3px 10px;border-radius:20px"><i class="fas fa-credit-card"></i> {{ pay.get_payment_method_display }}</span>
+          <span style="background:{% if pay.payment_status == 'paid' %}#e8f5e9;color:#2e7d32{% elif pay.payment_status == 'due' %}#ffebee;color:#c62828{% else %}#fff8e1;color:#f57f17{% endif %};padding:3px 10px;border-radius:20px">{{ pay.get_payment_status_display }}</span>
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% if v.followup_date %}<div class="tl-body" style="margin-top:6px;color:#1976d2"><i class="fas fa-calendar-check"></i> পরবর্তী ফলো-আপ: <strong>{{ v.followup_date|date:"d M Y" }}</strong></div>{% endif %}
+        {% if v.notes %}<div class="tl-body" style="margin-top:4px;font-style:italic;color:#888">{{ v.notes }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="fas fa-clipboard-list"></i><p>এখনো কোনো ভিজিট নেই</p></div>
+  {% endif %}
+</div>
+{% endblock %}

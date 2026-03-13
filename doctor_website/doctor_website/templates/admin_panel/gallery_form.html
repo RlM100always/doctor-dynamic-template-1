@@ -1,0 +1,58 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}{% if item %}ছবি সম্পাদনা{% else %}নতুন ছবি যোগ{% endif %}{% endblock %}
+{% block page_title %}{% if item %}ছবি সম্পাদনা{% else %}নতুন ছবি যোগ{% endif %}{% endblock %}
+
+{% block nav_gallery %}active{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:700px; margin:0 auto;">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label>শিরোনাম (ঐচ্ছিক)</label>
+            <input type="text" name="title" class="form-control" value="{{ item.title|default:'' }}" placeholder="যেমন: অপারেশন থিয়েটার">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>ছবি আপলোড</label>
+                <input type="file" name="image" class="form-control" accept="image/*">
+                {% if item.image %}
+                <div style="margin-top:8px;">
+                    <img src="{{ item.image.url }}" alt="" style="max-width:120px; border-radius:6px;">
+                </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label>অথবা ইমেজ লিংক</label>
+                <input type="url" name="image_url" class="form-control" value="{{ item.image_url|default:'' }}" placeholder="https://example.com/image.jpg">
+            </div>
+        </div>
+
+        <div class="form-row-3">
+            <div class="form-group">
+                <label>ক্রম</label>
+                <input type="number" name="order" class="form-control" value="{{ item.order|default:0 }}" min="0">
+            </div>
+            <div class="form-group">
+                <label>স্ট্যাটাস</label>
+                <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+                    <label class="toggle">
+                        <input type="checkbox" name="is_active" {% if item.is_active or not item %}checked{% endif %}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span>সক্রিয়</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <a href="{% url 'admin_gallery' %}" class="btn btn-secondary">বাতিল</a>
+            <button type="submit" class="btn btn-primary">সেভ করুন</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

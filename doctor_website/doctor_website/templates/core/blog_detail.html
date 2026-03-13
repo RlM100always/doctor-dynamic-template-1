@@ -3,71 +3,88 @@
 {% block title %}{{ post.title }} - {{ site.meta_title }}{% endblock %}
 
 {% block body %}
+
 <header class="header" id="header">
   <div class="header__inner">
+
     <a href="{% url 'home' %}" class="logo">
       <div class="logo__avatar">
-        <img src="{{ site.get_profile_photo }}" alt="{{ site.doctor_name }}" />
+        <img src="{{ site.get_profile_photo }}" alt="{{ site.doctor_name }}" style="border-radius:50%;">
       </div>
+
       <div class="logo__text">
         <strong>{{ site.doctor_name }}</strong>
         <span>{{ site.degrees }}</span>
       </div>
     </a>
+
     <nav class="nav" id="mainNav">
-  <a href="{% url 'home' %}#about" class="nav__link">সম্পর্কে</a>
-  <a href="{% url 'home' %}#qualification" class="nav__link">ডিগ্রি</a>
-  <a href="{% url 'home' %}#certificates" class="nav__link">সনদ</a>
-  <a href="{% url 'home' %}#chamber" class="nav__link">চেম্বার</a>
-  <a href="{% url 'home' %}#services" class="nav__link">সেবা</a>
-  <a href="{% url 'home' %}#fees" class="nav__link">ফি</a>
-  <a href="{% url 'home' %}#appointment" class="nav__link">অ্যাপয়েন্টমেন্ট</a>
-  <a href="{% url 'home' %}#reviews" class="nav__link">রিভিউ</a>
-  <a href="{% url 'home' %}#blog" class="nav__link active">ব্লগ</a>
-  <a href="{% url 'home' %}#team" class="nav__link">টিম</a>
-  <a href="{% url 'home' %}#faq" class="nav__link">FAQ</a>
-  <a href="{% url 'home' %}#contact" class="nav__link">যোগাযোগ</a>
-</nav>
-    <a href="tel:{{ site.phone_raw }}" class="header__cta"><i class="fas fa-phone-alt"></i> কল করুন</a>
-    <button class="burger" id="burger" aria-label="মেনু"><span></span><span></span><span></span></button>
+      <a href="{% url 'home' %}#about" class="nav__link">সম্পর্কে</a>
+      <a href="{% url 'home' %}#qualification" class="nav__link">ডিগ্রি</a>
+      <a href="{% url 'home' %}#certificates" class="nav__link">সনদ</a>
+      <a href="{% url 'home' %}#chamber" class="nav__link">চেম্বার</a>
+      <a href="{% url 'home' %}#services" class="nav__link">সেবা</a>
+      <a href="{% url 'home' %}#fees" class="nav__link">ফি</a>
+      <a href="{% url 'home' %}#appointment" class="nav__link">অ্যাপয়েন্টমেন্ট</a>
+      <a href="{% url 'home' %}#reviews" class="nav__link">রিভিউ</a>
+      <a href="{% url 'home' %}#blog" class="nav__link active">ব্লগ</a>
+      <a href="{% url 'home' %}#team" class="nav__link">টিম</a>
+      <a href="{% url 'home' %}#faq" class="nav__link">FAQ</a>
+      <a href="{% url 'home' %}#contact" class="nav__link">যোগাযোগ</a>
+    </nav>
+
+    <a href="tel:{{ site.phone_raw }}" class="header__cta">
+      <i class="fas fa-phone-alt"></i> কল করুন
+    </a>
+
+    <button class="burger" id="burger">
+      <span></span><span></span><span></span>
+    </button>
+
   </div>
 </header>
 
-<!-- Blog Detail Section -->
-<section class="blog-detail section" style="padding:80px 0; background:#fffefe;">
-  <div class="wrap" style="max-width:900px; margin:0 auto;">
-    <div class="blog-meta" style="margin-bottom:20px; color:#f2efef; font-size:0.9rem;">
-      <span class="blog-category" style="margin-right:15px;">
+
+<section class="blog-detail section">
+
+  <div class="wrap blog-detail-wrap">
+
+    <div class="blog-meta">
+
+      <span class="blog-cat">
         <i class="{{ post.icon_class }}"></i> {{ post.category }}
       </span>
+
       <span class="blog-date">
         প্রকাশিত: {{ post.created_at|date:"d M Y" }}
       </span>
+
     </div>
-    
-    <h1 style="font-size:2.2rem; margin-bottom:20px; color:#222;">{{ post.title }}</h1>
+
+
+    <h1>
+      {{ post.title }}
+    </h1>
+
 
     {% if post.featured_image %}
-    <div class="blog-image" style="margin-bottom:30px;">
-      <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" style="width:100%; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" />
+    <div class="blog-detail-image">
+      <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
     </div>
     {% endif %}
 
-    <div class="blog-content" style="line-height:1.8; font-size:1rem; color:#080101;">
+
+    <div class="blog-content">
       {{ post.full_content|default:post.excerpt|safe }}
     </div>
 
-    <div style="margin-top:40px;">
-      <a href="{% url 'home' %}" style="text-decoration:none; color:#007bff; font-weight:600;">← ফিরে যান ব্লগ লিস্টে</a>
+
+    <div class="blog-back">
+      <a href="{% url 'home' %}#blog">← সব ব্লগ দেখুন</a>
     </div>
+
   </div>
+
 </section>
 
-<style>
-/* Optional: Responsive tweaks for mobile */
-@media(max-width:768px){
-  .blog-detail h1{ font-size:1.8rem; }
-  .blog-content{ font-size:0.95rem; }
-}
-</style>
 {% endblock %}

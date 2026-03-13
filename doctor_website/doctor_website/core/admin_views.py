@@ -12,6 +12,9 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import GalleryItem
 from django.http import JsonResponse
 
 from core.models import (
@@ -21,6 +24,17 @@ from core.models import (
     TeamMember, FAQ, ContactMessage
 )
 from appointments.models import Appointment
+
+from django.db.models import Sum
+from django.db.models.functions import TruncMonth
+from django.http import HttpResponse
+import csv
+from core.models import ChamberPatient, ChamberVisit, ChamberPayment
+
+from .models import SiteSettings
+
+def get_site_settings():
+    return SiteSettings.objects.first()
 
 
 def is_admin(user):
@@ -105,7 +119,8 @@ def site_settings(request):
         obj.doctor_name_en = request.POST.get('doctor_name_en', obj.doctor_name_en)
         obj.specialty = request.POST.get('specialty', obj.specialty)
         obj.degrees = request.POST.get('degrees', obj.degrees)
-        obj.bio = request.POST.get('bio', obj.bio)
+        obj.short_bio = request.POST.get('short_bio', '')
+        obj.detailed_bio = request.POST.get('detailed_bio', '')  # This contains HTML
         obj.phone = request.POST.get('phone', obj.phone)
         obj.phone_raw = request.POST.get('phone_raw', obj.phone_raw)
         obj.whatsapp = request.POST.get('whatsapp', obj.whatsapp)
@@ -1146,3 +1161,652 @@ def icon_library(request):
     }
     
     return render(request, 'admin_panel/icon_library.html', {'categories': icons})
+
+
+
+
+
+
+# ---------- GALLERY MANAGEMENT ----------
+
+@login_required(login_url='/admin-panel/login/')
+def manage_gallery(request):
+    """List all gallery items"""
+
+    # only admin/staff can access
+    if not request.user.is_staff and not request.user.is_superuser:
+        return redirect('admin_login')
+
+    items = GalleryItem.objects.all().order_by('order')
+
+    paginator = Paginator(items, 20)
+    page = request.GET.get('page')
+    items_page = paginator.get_page(page)
+
+    return render(request, 'admin_panel/gallery_list.html', {
+        'items': items_page,
+        'site': get_site_settings()
+    })
+
+
+@login_required(login_url='/admin-panel/login/')
+def gallery_add(request):
+    """Add new gallery item"""
+
+    if not request.user.is_staff and not request.user.is_superuser:
+        return redirect('admin_login')
+
+    if request.method == 'POST':
+
+        title = request.POST.get('title', '')
+        image = request.FILES.get('image')
+        image_url = request.POST.get('image_url', '')
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+
+        if not image and not image_url:
+            messages.error(request, 'ছবি আপলোড দিন অথবা লিংক দিন।')
+        else:
+            GalleryItem.objects.create(
+                title=title,
+                image=image,
+                image_url=image_url,
+                order=int(order),
+                is_active=is_active
+            )
+
+            messages.success(request, 'গ্যালারির ছবি সফলভাবে যুক্ত হয়েছে।')
+            return redirect('admin_gallery')
+
+    return render(request, 'admin_panel/gallery_form.html', {
+        'item': None,
+        'site': get_site_settings()
+    })
+
+
+@login_required(login_url='/admin-panel/login/')
+def gallery_edit(request, pk):
+    """Edit existing gallery item"""
+
+    if not request.user.is_staff and not request.user.is_superuser:
+        return redirect('admin_login')
+
+    item = get_object_or_404(GalleryItem, pk=pk)
+
+    if request.method == 'POST':
+
+        item.title = request.POST.get('title', '')
+
+        new_image = request.FILES.get('image')
+        if new_image:
+            item.image = new_image
+
+        item.image_url = request.POST.get('image_url', '')
+        item.order = int(request.POST.get('order', 0))
+        item.is_active = request.POST.get('is_active') == 'on'
+
+        if not item.image and not item.image_url:
+            messages.error(request, 'ছবি আপলোড দিন অথবা লিংক দিন।')
+        else:
+            item.save()
+            messages.success(request, 'গ্যালারির ছবি আপডেট হয়েছে।')
+            return redirect('admin_gallery')
+
+    return render(request, 'admin_panel/gallery_form.html', {
+        'item': item,
+        'site': get_site_settings()
+    })
+
+
+@login_required(login_url='/admin-panel/login/')
+def gallery_delete(request, pk):
+    """Delete gallery item"""
+
+    if not request.user.is_staff and not request.user.is_superuser:
+        return redirect('admin_login')
+
+    item = get_object_or_404(GalleryItem, pk=pk)
+
+    item.delete()
+
+    messages.success(request, 'ছবি মুছে ফেলা হয়েছে।')
+
+    return redirect('admin_gallery')
+
+
+
+
+
+
+
+
+"""
+=============================================================================
+OFFLINE CHAMBER MANAGEMENT SYSTEM — VIEWS
+=============================================================================
+Append these imports and views to:  core/admin_views.py
+=============================================================================
+"""
+
+# ── ADD THESE IMPORTS TO THE TOP OF admin_views.py ───────────────────────────
+# from django.db.models import Sum, Count
+# from django.db.models.functions import TruncMonth
+# from core.models import ChamberPatient, ChamberVisit, ChamberPayment
+# from datetime import date
+# import json
+# ─────────────────────────────────────────────────────────────────────────────
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import Sum, Count, Q
+from django.db.models.functions import TruncMonth
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from datetime import date, timedelta
+import json, csv
+
+
+# ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+def _admin_check(request):
+    return request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)
+
+
+def _today_stats():
+    today = date.today()
+    visits_today = ChamberVisit.objects.filter(visit_date=today)
+    income_today = ChamberPayment.objects.filter(
+        visit__visit_date=today, payment_status='paid'
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+    followup_today = ChamberVisit.objects.filter(followup_date=today)
+    return visits_today, income_today, followup_today
+
+
+# ─── CHAMBER DASHBOARD ───────────────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_dashboard(request):
+    if not _admin_check(request):
+        return redirect('admin_login')
+
+    today = date.today()
+    month_start = today.replace(day=1)
+
+    # Today's stats
+    visits_today      = ChamberVisit.objects.filter(visit_date=today)
+    income_today      = ChamberPayment.objects.filter(
+        visit__visit_date=today, payment_status='paid'
+    ).aggregate(t=Sum('total_amount'))['t'] or 0
+
+    # Month stats
+    visits_this_month  = ChamberVisit.objects.filter(visit_date__gte=month_start)
+    income_this_month  = ChamberPayment.objects.filter(
+        visit__visit_date__gte=month_start, payment_status='paid'
+    ).aggregate(t=Sum('total_amount'))['t'] or 0
+
+    # Follow-up today
+    followup_today = ChamberVisit.objects.filter(
+        followup_date=today
+    ).select_related('patient')
+
+    # New vs follow-up this month
+    new_this_month      = visits_this_month.filter(visit_type='new').count()
+    followup_this_month = visits_this_month.filter(visit_type='followup').count()
+
+    # Top districts
+    top_districts = ChamberPatient.objects.values('district').annotate(
+        count=Count('id')
+    ).order_by('-count')[:5]
+
+    # Monthly income last 6 months (chart)
+    six_months_ago = today - timedelta(days=180)
+    monthly_income = (
+        ChamberPayment.objects
+        .filter(created_at__gte=six_months_ago, payment_status='paid')
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(total=Sum('total_amount'))
+        .order_by('month')
+    )
+    chart_labels = [m['month'].strftime('%b %Y') for m in monthly_income]
+    chart_data   = [float(m['total']) for m in monthly_income]
+
+    # Recent visits
+    recent_visits = ChamberVisit.objects.select_related(
+        'patient', 'payment'
+    ).order_by('-visit_date', '-created_at')[:8]
+
+    context = {
+        'visits_today_count'    : visits_today.count(),
+        'income_today'          : income_today,
+        'visits_month_count'    : visits_this_month.count(),
+        'income_this_month'     : income_this_month,
+        'followup_today'        : followup_today,
+        'new_this_month'        : new_this_month,
+        'followup_this_month'   : followup_this_month,
+        'top_districts'         : top_districts,
+        'chart_labels_json'     : json.dumps(chart_labels),
+        'chart_data_json'       : json.dumps(chart_data),
+        'recent_visits'         : recent_visits,
+        'total_patients'        : ChamberPatient.objects.count(),
+        'site'                  : _get_site(),
+    }
+    return render(request, 'admin_panel/chamber/dashboard.html', context)
+
+
+# ─── PATIENT LIST & MANAGEMENT ───────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_patients(request):
+    if not _admin_check(request):
+        return redirect('admin_login')
+
+    q = request.GET.get('q', '').strip()
+    patients = ChamberPatient.objects.all()
+    if q:
+        patients = patients.filter(
+            Q(name__icontains=q) | Q(phone__icontains=q) | Q(patient_id__icontains=q)
+        )
+
+    # Add/Edit
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            phone = request.POST.get('phone', '').strip()
+            # Check duplicate
+            existing = ChamberPatient.objects.filter(phone=phone).first()
+            if existing:
+                messages.warning(request, f'এই ফোন নম্বর দিয়ে রোগী আগে থেকেই আছেন: {existing.name}')
+            else:
+                ChamberPatient.objects.create(
+                    name     = request.POST.get('name'),
+                    phone    = phone,
+                    age      = request.POST.get('age') or None,
+                    gender   = request.POST.get('gender', 'female'),
+                    district = request.POST.get('district', 'tangail'),
+                    area     = request.POST.get('area', ''),
+                    address  = request.POST.get('address', ''),
+                    notes    = request.POST.get('notes', ''),
+                )
+                messages.success(request, 'রোগী সফলভাবে যোগ করা হয়েছে।')
+            return redirect('chamber_patients')
+
+        elif action == 'edit':
+            pk = request.POST.get('pk')
+            p  = get_object_or_404(ChamberPatient, pk=pk)
+            p.name     = request.POST.get('name', p.name)
+            p.phone    = request.POST.get('phone', p.phone)
+            p.age      = request.POST.get('age') or None
+            p.gender   = request.POST.get('gender', p.gender)
+            p.district = request.POST.get('district', p.district)
+            p.area     = request.POST.get('area', p.area)
+            p.address  = request.POST.get('address', p.address)
+            p.notes    = request.POST.get('notes', p.notes)
+            p.save()
+            messages.success(request, 'রোগীর তথ্য আপডেট হয়েছে।')
+            return redirect('chamber_patients')
+
+        elif action == 'delete':
+            pk = request.POST.get('pk')
+            p  = get_object_or_404(ChamberPatient, pk=pk)
+            p.delete()
+            messages.success(request, 'রোগী মুছে ফেলা হয়েছে।')
+            return redirect('chamber_patients')
+
+    context = {
+        'patients'        : patients,
+        'q'               : q,
+        'district_choices': ChamberPatient._meta.get_field('district').choices,
+        'gender_choices'  : ChamberPatient._meta.get_field('gender').choices,
+        'site'            : _get_site(),
+    }
+    return render(request, 'admin_panel/chamber/patients.html', context)
+
+
+# ─── PATIENT DETAIL (visit history) ─────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_patient_detail(request, pk):
+    if not _admin_check(request):
+        return redirect('admin_login')
+    patient = get_object_or_404(ChamberPatient, pk=pk)
+    visits  = patient.visits.select_related('payment').order_by('-visit_date')
+    context = {
+        'patient': patient,
+        'visits' : visits,
+        'site'   : _get_site(),
+    }
+    return render(request, 'admin_panel/chamber/patient_detail.html', context)
+
+
+# ─── VISIT MANAGEMENT ────────────────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_visits(request):
+    if not _admin_check(request):
+        return redirect('admin_login')
+
+    q    = request.GET.get('q', '').strip()
+    date_filter = request.GET.get('date', '')
+    type_filter = request.GET.get('type', '')
+
+    visits = ChamberVisit.objects.select_related('patient', 'payment').all()
+    if q:
+        visits = visits.filter(
+            Q(patient__name__icontains=q) | Q(patient__phone__icontains=q)
+        )
+    if date_filter:
+        visits = visits.filter(visit_date=date_filter)
+    if type_filter:
+        visits = visits.filter(visit_type=type_filter)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'add':
+            
+            patient_id = request.POST.get('patient_id', '').strip()
+    
+    # Validate patient was selected
+            if not patient_id:
+                messages.error(request, 'অনুগ্রহ করে একজন রোগী সিলেক্ট করুন।')
+                return redirect('chamber_visits')
+    
+            patient = get_object_or_404(ChamberPatient, pk=patient_id)
+            visit = ChamberVisit.objects.create(
+                patient      = patient,
+                visit_date   = request.POST.get('visit_date') or date.today(),
+                visit_type   = request.POST.get('visit_type', 'new'),
+                symptoms     = request.POST.get('symptoms', ''),
+                diagnosis    = request.POST.get('diagnosis', ''),
+                followup_date= request.POST.get('followup_date') or None,
+                doctor_fee   = request.POST.get('doctor_fee') or 0,
+                notes        = request.POST.get('notes', ''),
+            )
+            # auto-create payment
+            fee = float(request.POST.get('doctor_fee') or 0)
+            ChamberPayment.objects.create(
+                visit             = visit,
+                consultation_fee  = fee,
+                additional_charge = 0,
+                payment_method    = request.POST.get('payment_method', 'cash'),
+                payment_status    = request.POST.get('payment_status', 'paid'),
+            )
+            messages.success(request, 'ভিজিট সফলভাবে যোগ করা হয়েছে।')
+            return redirect('chamber_visits')
+
+        elif action == 'delete':
+            pk = request.POST.get('pk')
+            v  = get_object_or_404(ChamberVisit, pk=pk)
+            v.delete()
+            messages.success(request, 'ভিজিট মুছে ফেলা হয়েছে।')
+            return redirect('chamber_visits')
+
+    patients = ChamberPatient.objects.all().order_by('name')
+    context = {
+        'visits'          : visits,
+        'patients'        : patients,
+        'q'               : q,
+        'date_filter'     : date_filter,
+        'type_filter'     : type_filter,
+        'visit_types'     : ChamberVisit._meta.get_field('visit_type').choices,
+        'payment_methods' : ChamberPayment._meta.get_field('payment_method').choices,
+        'payment_statuses': ChamberPayment._meta.get_field('payment_status').choices,
+        'site'            : _get_site(),
+    }
+    return render(request, 'admin_panel/chamber/visits.html', context)
+
+
+# ─── PAYMENT / INCOME MANAGEMENT ─────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_payments(request):
+    if not _admin_check(request):
+        return redirect('admin_login')
+
+    today       = date.today()
+    month_start = today.replace(day=1)
+    year_start  = today.replace(month=1, day=1)
+
+    income_today  = ChamberPayment.objects.filter(
+        visit__visit_date=today, payment_status='paid'
+    ).aggregate(t=Sum('total_amount'))['t'] or 0
+    income_month  = ChamberPayment.objects.filter(
+        visit__visit_date__gte=month_start, payment_status='paid'
+    ).aggregate(t=Sum('total_amount'))['t'] or 0
+    income_year   = ChamberPayment.objects.filter(
+        visit__visit_date__gte=year_start, payment_status='paid'
+    ).aggregate(t=Sum('total_amount'))['t'] or 0
+
+    payments = ChamberPayment.objects.select_related(
+        'visit__patient'
+    ).order_by('-created_at')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'edit':
+            pk = request.POST.get('pk')
+            p  = get_object_or_404(ChamberPayment, pk=pk)
+            p.consultation_fee   = request.POST.get('consultation_fee', p.consultation_fee)
+            p.additional_charge  = request.POST.get('additional_charge', 0)
+            p.payment_method     = request.POST.get('payment_method', p.payment_method)
+            p.payment_status     = request.POST.get('payment_status', p.payment_status)
+            p.save()
+            messages.success(request, 'পেমেন্ট তথ্য আপডেট হয়েছে।')
+            return redirect('chamber_payments')
+
+    context = {
+        'payments'        : payments,
+        'income_today'    : income_today,
+        'income_month'    : income_month,
+        'income_year'     : income_year,
+        'payment_methods' : ChamberPayment._meta.get_field('payment_method').choices,
+        'payment_statuses': ChamberPayment._meta.get_field('payment_status').choices,
+        'site'            : _get_site(),
+    }
+    return render(request, 'admin_panel/chamber/payments.html', context)
+
+
+# ─── PRESCRIPTION PRINT ──────────────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_prescription(request, visit_pk):
+    if not _admin_check(request):
+        return redirect('admin_login')
+    visit   = get_object_or_404(ChamberVisit, pk=visit_pk)
+    site    = _get_site()
+    context = {'visit': visit, 'site': site}
+    return render(request, 'admin_panel/chamber/prescription.html', context)
+
+
+# ─── FOLLOW-UP LIST ───────────────────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_followups(request):
+    if not _admin_check(request):
+        return redirect('admin_login')
+
+    today       = date.today()
+    tomorrow    = today + timedelta(days=1)
+    next_7_days = today + timedelta(days=7)
+
+    due_today    = ChamberVisit.objects.filter(followup_date=today).select_related('patient')
+    due_tomorrow = ChamberVisit.objects.filter(followup_date=tomorrow).select_related('patient')
+    due_week     = ChamberVisit.objects.filter(
+        followup_date__gt=tomorrow, followup_date__lte=next_7_days
+    ).select_related('patient').order_by('followup_date')
+    overdue      = ChamberVisit.objects.filter(
+        followup_date__lt=today, followup_date__isnull=False
+    ).select_related('patient').order_by('-followup_date')[:20]
+
+    context = {
+        'due_today'   : due_today,
+        'due_tomorrow': due_tomorrow,
+        'due_week'    : due_week,
+        'overdue'     : overdue,
+        'today'       : today,
+        'site'        : _get_site(),
+    }
+    return render(request, 'admin_panel/chamber/followups.html', context)
+
+
+# ─── QUICK ENTRY (ajax-friendly) ─────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_quick_entry(request):
+    if not _admin_check(request):
+        return redirect('admin_login')
+
+    if request.method == 'POST':
+        phone = request.POST.get('phone', '').strip()
+        name  = request.POST.get('name', '').strip()
+        fee   = float(request.POST.get('fee') or 0)
+
+        # Get or create patient
+        patient, created = ChamberPatient.objects.get_or_create(
+            phone=phone,
+            defaults={'name': name}
+        )
+        if not created and name:
+            patient.name = name
+            patient.save()
+
+        visit = ChamberVisit.objects.create(
+            patient    = patient,
+            visit_date = date.today(),
+            visit_type = 'new' if created else 'followup',
+            doctor_fee = fee,
+        )
+        ChamberPayment.objects.create(
+            visit            = visit,
+            consultation_fee = fee,
+            payment_status   = 'paid',
+        )
+        messages.success(request, f'রোগী {"নতুন" if created else "ফলো-আপ"} ভিজিট যোগ করা হয়েছে: {patient.name}')
+        return redirect('chamber_dashboard')
+
+    context = {'site': _get_site()}
+    return render(request, 'admin_panel/chamber/quick_entry.html', context)
+
+
+# ─── ANALYTICS ───────────────────────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_analytics(request):
+    if not _admin_check(request):
+        return redirect('admin_login')
+
+    today      = date.today()
+    year_start = today.replace(month=1, day=1)
+
+    # Monthly visits & income for this year
+    monthly_visits = (
+        ChamberVisit.objects
+        .filter(visit_date__gte=year_start)
+        .annotate(month=TruncMonth('visit_date'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+    monthly_income = (
+        ChamberPayment.objects
+        .filter(visit__visit_date__gte=year_start, payment_status='paid')
+        .annotate(month=TruncMonth('visit__visit_date'))
+        .values('month')
+        .annotate(total=Sum('total_amount'))
+        .order_by('month')
+    )
+
+    # District analytics
+    district_data = ChamberPatient.objects.values('district').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    # New vs Followup
+    new_count      = ChamberVisit.objects.filter(visit_type='new').count()
+    followup_count = ChamberVisit.objects.filter(visit_type='followup').count()
+
+    # Payment method breakdown
+    payment_breakdown = ChamberPayment.objects.values('payment_method').annotate(
+        count=Count('id'), total=Sum('total_amount')
+    ).order_by('-total')
+
+    DISTRICT_MAP = dict(ChamberPatient._meta.get_field('district').choices)
+
+    context = {
+        'monthly_visits_json'  : json.dumps([
+            {'month': m['month'].strftime('%b %Y'), 'count': m['count']} for m in monthly_visits
+        ]),
+        'monthly_income_json'  : json.dumps([
+            {'month': m['month'].strftime('%b %Y'), 'total': float(m['total'])} for m in monthly_income
+        ]),
+        'district_labels_json' : json.dumps([DISTRICT_MAP.get(d['district'], d['district']) for d in district_data]),
+        'district_data_json'   : json.dumps([d['count'] for d in district_data]),
+        'new_count'            : new_count,
+        'followup_count'       : followup_count,
+        'payment_breakdown'    : payment_breakdown,
+        'site'                 : _get_site(),
+    }
+    return render(request, 'admin_panel/chamber/analytics.html', context)
+
+
+# ─── REPORTS / EXPORT ────────────────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_reports(request):
+    if not _admin_check(request):
+        return redirect('admin_login')
+
+    if request.GET.get('export') == 'csv':
+        report_type = request.GET.get('type', 'patients')
+        response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+        response['Content-Disposition'] = f'attachment; filename="chamber_{report_type}_{date.today()}.csv"'
+        writer = csv.writer(response)
+
+        if report_type == 'patients':
+            writer.writerow(['Patient ID', 'Name', 'Phone', 'Age', 'Gender', 'District', 'Area', 'First Visit', 'Total Visits'])
+            for p in ChamberPatient.objects.all():
+                writer.writerow([p.patient_id, p.name, p.phone, p.age, p.get_gender_display(),
+                                  p.get_district_display(), p.area, p.first_visit_date, p.get_total_visits()])
+
+        elif report_type == 'income':
+            writer.writerow(['Date', 'Patient', 'Phone', 'Visit Type', 'Consultation Fee', 'Additional', 'Total', 'Method', 'Status'])
+            for pay in ChamberPayment.objects.select_related('visit__patient').order_by('-created_at'):
+                v = pay.visit
+                writer.writerow([v.visit_date, v.patient.name, v.patient.phone,
+                                  v.get_visit_type_display(), pay.consultation_fee,
+                                  pay.additional_charge, pay.total_amount,
+                                  pay.get_payment_method_display(), pay.get_payment_status_display()])
+
+        elif report_type == 'visits':
+            writer.writerow(['Date', 'Patient', 'Phone', 'Type', 'Symptoms', 'Diagnosis', 'Followup Date', 'Fee'])
+            for v in ChamberVisit.objects.select_related('patient').order_by('-visit_date'):
+                writer.writerow([v.visit_date, v.patient.name, v.patient.phone,
+                                  v.get_visit_type_display(), v.symptoms, v.diagnosis,
+                                  v.followup_date or '', v.doctor_fee])
+        return response
+
+    context = {'site': _get_site()}
+    return render(request, 'admin_panel/chamber/reports.html', context)
+
+
+# ─── PATIENT SEARCH (AJAX) ────────────────────────────────────────────────────
+
+@login_required(login_url='/admin-panel/login/')
+def chamber_patient_search_ajax(request):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': []})
+    patients = ChamberPatient.objects.filter(
+        Q(name__icontains=q) | Q(phone__icontains=q) | Q(patient_id__icontains=q)
+    )[:10]
+    results = [{'id': p.pk, 'name': p.name, 'phone': p.phone, 'pid': p.patient_id} for p in patients]
+    return JsonResponse({'results': results})
+
+
+# ─── HELPER ──────────────────────────────────────────────────────────────────
+def _get_site():
+    from core.models import SiteSettings
+    return SiteSettings.objects.first()

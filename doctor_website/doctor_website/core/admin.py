@@ -5,7 +5,16 @@ from .models import (
     AppointmentSlot, Review, RatingBar, Video, BlogPost, MediaCoverage,
     TeamMember, FAQ, ContactMessage
 )
+from .models import GalleryItem
 
+@admin.register(GalleryItem)
+class GalleryItemAdmin(admin.ModelAdmin):
+    list_display = ('title', 'order', 'is_active')
+    list_editable = ('order', 'is_active')
+    fields = ('title', 'image', 'image_url', 'order', 'is_active')
+    help_texts = {
+        'image_url': 'শুধুমাত্র তখন ব্যবহার করুন যখন ছবি আপলোড করা সম্ভব নয়।',
+    }
 admin.site.register(SiteSettings)
 admin.site.register(TickerMessage)
 admin.site.register(TrustChip)

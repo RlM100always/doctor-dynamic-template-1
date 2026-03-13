@@ -514,7 +514,7 @@
   <nav class="sidebar__nav">
     <div class="nav-section-label">প্রধান</div>
     <a href="{% url 'admin_dashboard' %}" class="sidebar__link {% block nav_dashboard %}{% endblock %}"><i class="fas fa-tachometer-alt"></i> ড্যাশবোর্ড</a>
-    <a href="{% url 'admin_appointments' %}" class="sidebar__link {% block nav_appointments %}{% endblock %}"><i class="fas fa-calendar-check"></i> অ্যাপয়েন্টমেন্ট</a>
+    <a href="{% url 'admin_appointments' %}" class="sidebar__link {% block nav_appointments %}{% endblock %}"><i class="fas fa-calendar-check"></i>অনলাইন অ্যাপয়েন্টমেন্ট</a>
     <a href="{% url 'admin_messages' %}" class="sidebar__link {% block nav_messages %}{% endblock %}"><i class="fas fa-envelope"></i> বার্তাসমূহ</a>
 
     <div class="nav-section-label">সাইট কনটেন্ট</div>
@@ -528,9 +528,20 @@
     <a href="{% url 'admin_reviews' %}" class="sidebar__link {% block nav_reviews %}{% endblock %}"><i class="fas fa-star"></i> রিভিউ</a>
     <a href="{% url 'admin_videos' %}" class="sidebar__link {% block nav_videos %}{% endblock %}"><i class="fas fa-video"></i> ভিডিও</a>
     <a href="{% url 'admin_blogs' %}" class="sidebar__link {% block nav_blogs %}{% endblock %}"><i class="fas fa-blog"></i> ব্লগ পোস্ট</a>
+
+
     <a href="{% url 'admin_media' %}" class="sidebar__link {% block nav_media %}{% endblock %}"><i class="fas fa-newspaper"></i> মিডিয়া কভারেজ</a>
     <a href="{% url 'admin_team' %}" class="sidebar__link {% block nav_team %}{% endblock %}"><i class="fas fa-users"></i> টিম সদস্য</a>
+
+    <a href="{% url 'admin_gallery' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_gallery' or request.resolver_match.url_name == 'admin_gallery_add' or request.resolver_match.url_name == 'admin_gallery_edit' %}active{% endif %}">
+    <i class="fas fa-images"></i> গ্যালারি
+</a>
+
+
     <a href="{% url 'admin_faqs' %}" class="sidebar__link {% block nav_faqs %}{% endblock %}"><i class="fas fa-question-circle"></i> FAQ</a>
+
+
+
 
     <!-- After টিকার বার্তা -->
 <a href="{% url 'admin_hero_degrees' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_hero_degrees' %}active{% endif %}">
@@ -567,6 +578,25 @@
 <a href="{% url 'admin_icon_library' %}" class="sidebar__link {% if request.resolver_match.url_name == 'admin_icon_library' %}active{% endif %}">
     <i class="fas fa-icons"></i> আইকন লাইব্রেরি
 </a>
+
+<div class="nav-section-label">চেম্বার ম্যানেজমেন্ট</div>
+<a href="{% url 'chamber_dashboard' %}" class="sidebar__link">
+   <i class="fas fa-hospital-user"></i> চেম্বার ড্যাশবোর্ড</a>
+<a href="{% url 'chamber_quick_entry' %}" class="sidebar__link">
+   <i class="fas fa-bolt"></i> দ্রুত এন্ট্রি</a>
+<a href="{% url 'chamber_patients' %}" class="sidebar__link">
+   <i class="fas fa-user-injured"></i> রোগী ব্যবস্থাপনা</a>
+<a href="{% url 'chamber_visits' %}" class="sidebar__link">
+   <i class="fas fa-stethoscope"></i> ভিজিট</a>
+<a href="{% url 'chamber_payments' %}" class="sidebar__link">
+   <i class="fas fa-coins"></i> পেমেন্ট ও আয়</a>
+<a href="{% url 'chamber_followups' %}" class="sidebar__link">
+   <i class="fas fa-calendar-check"></i> ফলো-আপ</a>
+<a href="{% url 'chamber_analytics' %}" class="sidebar__link">
+   <i class="fas fa-chart-bar"></i> অ্যানালিটিক্স</a>
+<a href="{% url 'chamber_reports' %}" class="sidebar__link">
+   <i class="fas fa-download"></i> রিপোর্ট</a>
+
 
 
     <div class="nav-section-label">অন্যান্য</div>

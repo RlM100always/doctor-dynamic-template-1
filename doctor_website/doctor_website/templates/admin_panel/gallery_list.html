@@ -1,0 +1,75 @@
+{% extends "admin_panel/base_admin.html" %}
+
+{% block title %}গ্যালারি ব্যবস্থাপনা{% endblock %}
+{% block page_title %}গ্যালারির ছবি{% endblock %}
+
+{% block nav_gallery %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>গ্যালারির ছবি</h1>
+    <a href="{% url 'admin_gallery_add' %}" class="btn btn-primary"><i class="fas fa-plus"></i> নতুন ছবি যোগ করুন</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th>ছবি</th>
+                    <th>শিরোনাম</th>
+                    <th>ক্রম</th>
+                    <th>স্ট্যাটাস</th>
+                    <th>অ্যাকশন</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        {% if item.get_image_url %}
+                        <img src="{{ item.get_image_url }}" alt="{{ item.title }}" style="width:60px; height:45px; object-fit:cover; border-radius:6px;">
+                        {% else %}
+                        <span class="text-muted">ছবি নেই</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.title|default:'(শিরোনামহীন)' }}</td>
+                    <td>{{ item.order }}</td>
+                    <td>
+                        {% if item.is_active %}
+                        <span class="badge badge-success">সক্রিয়</span>
+                        {% else %}
+                        <span class="badge badge-danger">নিষ্ক্রিয়</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-buttons">
+                        <a href="{% url 'admin_gallery_edit' item.pk %}" class="btn btn-sm btn-secondary" title="সম্পাদনা"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'admin_gallery_delete' item.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('ছবিটি মুছে ফেলতে চান?');" title="মুছুন"><i class="fas fa-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="empty-state">
+                        <i class="fas fa-images"></i>
+                        <p>কোনো ছবি নেই। নতুন ছবি যোগ করুন।</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if items.has_other_pages %}
+    <div style="margin-top:20px; display:flex; justify-content:center; gap:5px;">
+        {% if items.has_previous %}
+        <a href="?page={{ items.previous_page_number }}" class="btn btn-sm btn-secondary">« পূর্ববর্তী</a>
+        {% endif %}
+        <span style="padding: 5px 10px;">পৃষ্ঠা {{ items.number }} / {{ items.paginator.num_pages }}</span>
+        {% if items.has_next %}
+        <a href="?page={{ items.next_page_number }}" class="btn btn-sm btn-secondary">পরবর্তী »</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

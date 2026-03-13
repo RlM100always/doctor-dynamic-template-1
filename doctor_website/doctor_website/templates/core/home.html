@@ -22,34 +22,103 @@
     </a>
     <nav class="nav" id="mainNav">
       <a href="#about" class="nav__link">সম্পর্কে</a>
+
+      {% if qualifications %}
       <a href="#qualification" class="nav__link">ডিগ্রি</a>
+      {% endif %}
+
+      {% if certificates %}
       <a href="#certificates" class="nav__link">সনদ</a>
+      {% endif %}
+
+
+      {% if chambers or site.map_embed_url %}
       <a href="#chamber" class="nav__link">চেম্বার</a>
+      {% endif %}
+
+      {% if services %}
       <a href="#services" class="nav__link">সেবা</a>
+      {% endif %}
+
+      {% if fees %}
       <a href="#fees" class="nav__link">ফি</a>
+      {% endif %}
+
+      {% if gallery_items %}
+      <a href="#gallery" class="nav__link">গ্যালারি</a>
+      {% endif %}
+
       <a href="#appointment" class="nav__link">অ্যাপয়েন্টমেন্ট</a>
+
+      {% if reviews or rating_bars %}
       <a href="#reviews" class="nav__link">রিভিউ</a>
+      {% endif %}
+
+      {% if blog_posts %}
       <a href="#blog" class="nav__link">ব্লগ</a>
+      {% endif %}
+
+      {% if team_members %}
       <a href="#team" class="nav__link">টিম</a>
-      <a href="#faq" class="nav__link">FAQ</a>
+      {% endif %}
+
+      {% if faqs %}
+      <a href="#faq" class="nav__link">প্রশ্নোত্তর</a>
+      {% endif %}
+
       <a href="#contact" class="nav__link">যোগাযোগ</a>
     </nav>
     <a href="tel:{{ site.phone_raw }}" class="header__cta"><i class="fas fa-phone-alt"></i> কল করুন</a>
     <button class="burger" id="burger" aria-label="মেনু"><span></span><span></span><span></span></button>
   </div>
+
+
   <div class="mobile-nav" id="mobileNav">
     <div class="mobile-nav__inner">
       <a href="#about" class="mob-link">সম্পর্কে</a>
+
+      {% if qualifications %}
       <a href="#qualification" class="mob-link">ডিগ্রি</a>
+      {% endif %}
+
+      {% if certificates %}
       <a href="#certificates" class="mob-link">সনদ</a>
+      {% endif %}
+
+      {% if chambers or site.map_embed_url %}
       <a href="#chamber" class="mob-link">চেম্বার</a>
+      {% endif %}
+
+      {% if services %}
       <a href="#services" class="mob-link">সেবা</a>
-      <a href="#fees" class="mob-link">ফি চার্ট</a>
+      {% endif %}
+
+      {% if fees %}
+      <a href="#fees" class="mob-link">ফি</a>
+      {% endif %}
+
+      {% if gallery_items %}
+      <a href="#gallery" class="mob-link">গ্যালারি</a>
+      {% endif %}
+
       <a href="#appointment" class="mob-link">অ্যাপয়েন্টমেন্ট</a>
+
+      {% if reviews or rating_bars %}
       <a href="#reviews" class="mob-link">রিভিউ</a>
+      {% endif %}
+
+      {% if blog_posts %}
       <a href="#blog" class="mob-link">ব্লগ</a>
+      {% endif %}
+
+      {% if team_members %}
       <a href="#team" class="mob-link">টিম</a>
-      <a href="#faq" class="mob-link">FAQ</a>
+      {% endif %}
+
+      {% if faqs %}
+      <a href="#faq" class="mob-link">প্রশ্নোত্তর</a>
+      {% endif %}
+
       <a href="#contact" class="mob-link">যোগাযোগ</a>
     </div>
   </div>
@@ -63,10 +132,11 @@
       <h1 class="hero__name">{{ site.doctor_name }}</h1>
       <div class="hero__degrees">
         {% for deg in hero_degrees %}<span class="hero__deg-pill">{{ deg.label }}</span>
-        {% empty %}<span class="hero__deg-pill">MBBS</span><span class="hero__deg-pill">FCPS (গাইনী)</span><span class="hero__deg-pill">MRCOG (UK)</span>
+        {% empty %}<span class="hero__deg-pill">MBBS</span><span class="hero__deg-pill">FCPS (গাইনী)</span><span
+          class="hero__deg-pill">MRCOG (UK)</span>
         {% endfor %}
       </div>
-      <p class="hero__bio">{{ site.bio }}</p>
+      <p class="hero__bio">{{site.short_bio|safe}}</p>
       <div class="hero__numbers">
 
 
@@ -189,11 +259,11 @@
 <!-- ABOUT -->
 <section id="about" class="section sec-bg-cream">
   <div class="wrap">
-    <div class="sec-label">০১ — পরিচিতি</div>
+    <div class="sec-label">--পরিচিতি--</div>
     <div class="sec-title">বিশেষজ্ঞ চিকিৎসক<br />সম্পর্কে জানুন</div>
     <div class="about-grid" style="margin-top:48px;">
       <div class="about-text">
-        <p>{{ site.bio }}</p>
+        <p>{{ site.detailed_bio|safe }}</p>   <!-- HTML will render properly -->
         <div class="about-highlights">
           {% for h in about_highlights %}
           <div class="highlight-row reveal">
@@ -241,14 +311,18 @@
 </section>
 
 <!-- QUALIFICATION -->
+{% if qualifications %}
 <section id="qualification" class="section sec-bg-white">
   <div class="wrap">
+
     <div class="sec-header-center">
-      <div class="sec-label">০২ — একাডেমিক</div>
+      <div class="sec-label">--একাডেমিক--</div>
       <h2 class="sec-title">শিক্ষাগত যোগ্যতা<br />ও প্রশিক্ষণ</h2>
     </div>
+
     <div class="timeline-wrap" style="margin-top:56px;">
       <div class="timeline-spine"></div>
+
       {% for q in qualifications %}
       <div class="tl-entry reveal">
         <div class="tl-node"><i class="{{ q.icon_class }}"></i></div>
@@ -257,21 +331,28 @@
           <h3>{{ q.degree }}</h3>
           <p>{{ q.institution }}</p>
           <span
-            class="tl-type {% if q.entry_type == 'international' or q.entry_type == 'training' %}tl-type--intl{% endif %}">{{ q.get_entry_type_display }}</span>
+            class="tl-type {% if q.entry_type == 'international' or q.entry_type == 'training' %}tl-type--intl{% endif %}">
+            {{ q.get_entry_type_display }}
+          </span>
         </div>
       </div>
       {% endfor %}
+
     </div>
   </div>
 </section>
+{% endif %}
 
 <!-- CERTIFICATES -->
+{% if certificates %}
 <section id="certificates" class="section sec-bg-mint">
   <div class="wrap">
+
     <div class="sec-header-center">
-      <div class="sec-label">০৩ — স্বীকৃতি</div>
+      <div class="sec-label">--স্বীকৃতি--</div>
       <h2 class="sec-title">সনদপত্র<br />ও অ্যাফিলিয়েশন</h2>
     </div>
+
     <div class="cert-grid" style="margin-top:52px;">
       {% for c in certificates %}
       <a href="{{ c.link_url }}" target="_blank" class="cert-card {% if c.is_amber %}cert-card--amber{% endif %} reveal"
@@ -284,31 +365,40 @@
       </a>
       {% endfor %}
     </div>
+
   </div>
 </section>
+{% endif %}
 
 <!-- CHAMBER -->
+{% if chambers or site.map_embed_url %}
 <section id="chamber" class="section sec-bg-white">
   <div class="wrap">
+
     <div class="sec-header-center">
-      <div class="sec-label">০৪ — লোকেশন</div>
+      <div class="sec-label">--লোকেশন--</div>
       <h2 class="sec-title">চেম্বারের<br />তথ্য ও সময়সূচি</h2>
     </div>
+
     <div class="chamber-layout" style="margin-top:52px;">
+
       {% if site.map_embed_url %}
       <div class="chamber-map-col">
         <iframe src="{{ site.map_embed_url }}" allowfullscreen loading="lazy" title="চেম্বারের অবস্থান"></iframe>
-        <a href="{{ site.maps_link }}" target="_blank" class="map-cta"><i class="fas fa-directions"></i> গুগল ম্যাপে
-          দেখুন</a>
+        <a href="{{ site.maps_link }}" target="_blank" class="map-cta">
+          <i class="fas fa-directions"></i> গুগল ম্যাপে দেখুন
+        </a>
       </div>
       {% endif %}
+
       {% for ch in chambers %}
       <div class="ch-card reveal">
         <div class="ch-badge {% if ch.is_amber %}ch-badge--amber{% endif %}">{{ ch.badge }}</div>
         <div class="ch-head">
           <div class="ch-head-ico"><i class="{{ ch.icon_class }}"></i></div>
           <div>
-            <h3>{{ ch.name }}</h3><span class="ch-area">{{ ch.area }}</span>
+            <h3>{{ ch.name }}</h3>
+            <span class="ch-area">{{ ch.area }}</span>
           </div>
         </div>
         <div class="ch-info">
@@ -319,17 +409,23 @@
         </div>
       </div>
       {% endfor %}
+
     </div>
+
   </div>
 </section>
+{% endif %}
 
 <!-- SERVICES -->
+{% if services %}
 <section id="services" class="section sec-bg-cream">
   <div class="wrap">
+
     <div class="sec-header-center">
-      <div class="sec-label">০৫ — বিশেষত্ব</div>
+      <div class="sec-label">--বিশেষত্ব--</div>
       <h2 class="sec-title">চিকিৎসা<br />সেবার পরিধি</h2>
     </div>
+
     <div class="srv-grid" style="margin-top:52px;">
       {% for svc in services %}
       <div class="srv-card {% if svc.is_featured %}srv-card--featured{% endif %} reveal">
@@ -339,17 +435,23 @@
       </div>
       {% endfor %}
     </div>
+
   </div>
 </section>
+{% endif %}
 
 <!-- FEES -->
+{% if fees %}
 <section id="fees" class="section sec-bg-white">
   <div class="wrap">
+
     <div class="sec-header-center">
-      <div class="sec-label">০৬ — মূল্য তালিকা</div>
+      <div class="sec-label">--মূল্য তালিকা--</div>
       <h2 class="sec-title">ফি চার্ট<br />ও সেবা মূল্য</h2>
     </div>
+
     <div class="fees-wrap" style="margin-top:52px;">
+
       <div class="fees-table-outer reveal">
         <table class="fees-table">
           <thead>
@@ -375,6 +477,7 @@
           </tbody>
         </table>
       </div>
+
       <div class="fees-aside">
         <div class="fees-info-card reveal">
           <h4><i class="fas fa-info-circle"></i> গুরুত্বপূর্ণ তথ্য</h4>
@@ -392,15 +495,53 @@
           <a href="#appointment" class="book-btn"><i class="fas fa-calendar-check"></i> এখনই বুক করুন</a>
         </div>
       </div>
+
     </div>
   </div>
 </section>
+{% endif %}
+
+<!-- GALLERY -->
+
+{% if gallery_items %}
+<section id="gallery" class="section sec-bg-cream">
+  <div class="wrap">
+
+    <div class="sec-header-center">
+      <div class="sec-label">--গ্যালারি--</div>
+      <h2 class="sec-title">চিকিৎসকের <br> ছবি গ্যালারি</h2>
+    </div>
+
+    <div class="gallery-grid">
+      {% for item in gallery_items %}
+      <div class="gallery-card">
+        <div class="gallery-image">
+          <a href="{{ item.get_image_url }}" target="_blank">
+            <img src="{{ item.get_image_url }}" 
+                 alt="{{ item.title|default:'Gallery Image' }}" 
+                 loading="lazy">
+          </a>
+        </div>
+        {% if item.title %}
+        <div class="gallery-caption">
+          <h4>{{ item.title }}</h4>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+{% endif %}
+
+
 
 <!-- APPOINTMENT -->
 <section id="appointment" class="section sec-bg-mint">
   <div class="wrap">
     <div class="sec-header-center">
-      <div class="sec-label">০৭ — বুকিং</div>
+      <div class="sec-label">--বুকিং--</div>
       <h2 class="sec-title">অনলাইন<br />অ্যাপয়েন্টমেন্ট</h2>
     </div>
     <div class="appt-grid" style="margin-top:52px;">
@@ -471,33 +612,43 @@
 </section>
 
 <!-- REVIEWS -->
+{% if reviews or rating_bars %}
 <section id="reviews" class="section sec-bg-white">
   <div class="wrap">
+
     <div class="sec-header-center">
-      <div class="sec-label">০৮ — মতামত</div>
+      <div class="sec-label">--মতামত--</div>
       <h2 class="sec-title">রোগীর<br />অভিজ্ঞতা ও রিভিউ</h2>
     </div>
+
     <div style="margin-top:52px;">
+
       <div class="rating-overview reveal">
         <div class="rating-big-score">
           <div class="score-num">{{ site.google_rating }}</div>
           <div class="score-stars">★★★★★</div>
           <div class="score-label">গড় রেটিং</div>
         </div>
+
         <div class="google-badge">
           <i class="fab fa-google"></i>
-          <div><strong>Google Reviews</strong>
+          <div>
+            <strong>Google Reviews</strong>
             <p>{{ site.google_review_count }}+ যাচাইকৃত রিভিউ</p>
           </div>
         </div>
+
         <div class="rating-bars">
           {% for bar in rating_bars %}
-          <div class="rbar"><span>{{ bar.stars }}★</span>
+          <div class="rbar">
+            <span>{{ bar.stars }}★</span>
             <div class="rbar__track">
               <div class="rbar__fill" data-width="{{ bar.percentage }}%"></div>
-            </div><span>{{ bar.percentage }}%</span>
+            </div>
+            <span>{{ bar.percentage }}%</span>
           </div>
           {% empty %}
+          <!-- Default static example if rating_bars is empty -->
           <div class="rbar"><span>৫★</span>
             <div class="rbar__track">
               <div class="rbar__fill" data-width="82%"></div>
@@ -516,31 +667,36 @@
           {% endfor %}
         </div>
       </div>
+
       <div class="reviews-grid">
         {% for rev in reviews %}
         <div class="rev-card {% if rev.is_accent %}rev-card--accent{% endif %} reveal">
           <div class="rev-top">
             <div class="rev-av">{{ rev.avatar_letter }}</div>
-            <div><strong>{{ rev.reviewer_name }}</strong>
+            <div>
+              <strong>{{ rev.reviewer_name }}</strong>
               <div class="rev-stars">{{ rev.get_stars }}</div>
             </div>
-            {% if rev.is_verified %}<span class="rev-verified"><i class="fas fa-shield-alt"></i>
-              যাচাইকৃত</span>{% endif %}
+            {% if rev.is_verified %}
+            <span class="rev-verified"><i class="fas fa-shield-alt"></i> যাচাইকৃত</span>
+            {% endif %}
           </div>
           <p>"{{ rev.review_text }}"</p>
         </div>
         {% endfor %}
       </div>
+
     </div>
   </div>
 </section>
+{% endif %}
 
 <!-- VIDEO -->
 {% if videos %}
 <section id="video" class="section sec-bg-cream">
   <div class="wrap">
     <header class="sec-header-center">
-      <p class="sec-label">০৯ — মিডিয়া</p>
+      <p class="sec-label">--মিডিয়া--</p>
       <h2 class="sec-title">
         ভিডিও গ্যালারি<br>
         ও স্বাস্থ্য তথ্য
@@ -572,18 +728,18 @@
 {% endif %}
 
 <!-- BLOG -->
-<!-- BLOG -->
+{% if blog_posts %}
 <section id="blog" class="section sec-bg-white">
   <div class="wrap">
+
     <div class="sec-header-center">
-      <div class="sec-label">১০ — স্বাস্থ্য তথ্য</div>
+      <div class="sec-label">--স্বাস্থ্য তথ্য--</div>
       <h2 class="sec-title">ডাক্তারের<br />স্বাস্থ্য ব্লগ</h2>
     </div>
 
     <div class="blog-grid" style="margin-top:52px;">
       {% for post in blog_posts %}
       <article class="blog-card {% if post.is_large %}blog-card--large{% endif %} reveal">
-        <!-- Make entire card clickable -->
         <a href="{% url 'blog_detail_page' post.pk %}" class="blog-card-link">
           <div class="blog-cat"><i class="{{ post.icon_class }}"></i> {{ post.category }}</div>
           <h3>{{ post.title }}</h3>
@@ -593,15 +749,17 @@
       </article>
       {% endfor %}
     </div>
+
   </div>
 </section>
+{% endif %}
 
 <!-- MEDIA COVERAGE -->
 {% if media_coverages %}
 <section class="section sec-bg-cream">
   <div class="wrap">
     <div class="sec-header-center">
-      <div class="sec-label">প্রেস ও স্বীকৃতি</div>
+      <div class="sec-label">--প্রেস ও স্বীকৃতি--</div>
       <h2 class="sec-title">মিডিয়া কভারেজ<br />ও সম্মাননা</h2>
     </div>
     <div class="media-grid" style="margin-top:52px;">
@@ -620,38 +778,53 @@
 {% endif %}
 
 <!-- TEAM -->
+{% if team_members %}
 <section id="team" class="section sec-bg-white">
   <div class="wrap">
     <div class="sec-header-center">
-      <div class="sec-label">১১ — দল</div>
+      <div class="sec-label">--দল--</div>
       <h2 class="sec-title">আমাদের<br />স্বাস্থ্যসেবা টিম</h2>
     </div>
+
     <div class="team-grid" style="margin-top:52px;">
       {% for member in team_members %}
       <div class="team-card {% if member.is_lead %}team-card--lead{% endif %} reveal">
+
         {% if member.get_photo %}
-        <div class="team-photo"><img src="{{ member.get_photo }}" alt="{{ member.name }}" /></div>
+        <div class="team-photo">
+          <img src="{{ member.get_photo }}" alt="{{ member.name }}">
+        </div>
         {% else %}
-        <div class="team-avatar"><i class="{{ member.icon_class }}"></i></div>
+        <div class="team-avatar">
+          <i class="{{ member.icon_class }}"></i>
+        </div>
         {% endif %}
+
         <div class="team-info">
           <span class="team-role">{{ member.role }}</span>
           <h3>{{ member.name }}</h3>
           <p>{{ member.qualifications }}</p>
         </div>
+
       </div>
       {% endfor %}
     </div>
+
   </div>
 </section>
+{% endif %}
+
 
 <!-- FAQ -->
+{% if faqs %}
 <section id="faq" class="section sec-bg-mint">
   <div class="wrap">
+
     <div class="sec-header-center">
-      <div class="sec-label">১২ — প্রশ্নোত্তর</div>
+      <div class="sec-label">--প্রশ্নোত্তর--</div>
       <h2 class="sec-title">সাধারণ<br />জিজ্ঞাসা ও উত্তর</h2>
     </div>
+
     <div class="faq-grid" style="margin-top:52px;">
       {% for faq in faqs %}
       <div class="faq-item reveal">
@@ -665,14 +838,16 @@
       </div>
       {% endfor %}
     </div>
+
   </div>
 </section>
+{% endif %}
 
 <!-- CONTACT -->
 <section id="contact" class="section sec-bg-white">
   <div class="wrap">
     <div class="sec-header-center">
-      <div class="sec-label">১৩ — যোগাযোগ</div>
+      <div class="sec-label">--যোগাযোগ--</div>
       <h2 class="sec-title">আমাদের সাথে<br />কথা বলুন</h2>
     </div>
     <div class="contact-layout" style="margin-top:52px;">
@@ -741,7 +916,7 @@
     <div class="wrap footer__grid">
       <div class="footer__brand">
         <div class="footer__brand-icon">
-                <div class="logo__avatar"><img src="{{ site.get_profile_photo }}" alt="{{ site.doctor_name }}" /></div>
+          <div class="logo__avatar"><img src="{{ site.get_profile_photo }}" alt="{{ site.doctor_name }}" /></div>
         </div>
         <div class="footer__brand-info">
           <h3>{{ site.doctor_name }}</h3>

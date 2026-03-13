@@ -29,5 +29,23 @@ urlpatterns = [
     path('media/', av.manage_media, name='admin_media'),
     # New icon library URL
     path('icon-library/', av.icon_library, name='admin_icon_library'),
+    path('gallery/', av.manage_gallery, name='admin_gallery'),
+    path('gallery/add/', av.gallery_add, name='admin_gallery_add'),
+    path('gallery/edit/<int:pk>/', av.gallery_edit, name='admin_gallery_edit'),
+    path('gallery/delete/<int:pk>/', av.gallery_delete, name='admin_gallery_delete'),
+    
+    # Chamber Management
+path('chamber/', av.chamber_dashboard, name='chamber_dashboard'),
+path('chamber/patients/', av.chamber_patients, name='chamber_patients'),
+path('chamber/patients/<int:pk>/', av.chamber_patient_detail, name='chamber_patient_detail'),
+path('chamber/visits/', av.chamber_visits, name='chamber_visits'),
+path('chamber/payments/', av.chamber_payments, name='chamber_payments'),
+path('chamber/prescription/<int:visit_pk>/', av.chamber_prescription, name='chamber_prescription'),
+path('chamber/followups/', av.chamber_followups, name='chamber_followups'),
+path('chamber/quick/', av.chamber_quick_entry, name='chamber_quick_entry'),
+path('chamber/analytics/', av.chamber_analytics, name='chamber_analytics'),
+path('chamber/reports/', av.chamber_reports, name='chamber_reports'),
+path('chamber/patients/search/', av.chamber_patient_search_ajax, name='chamber_patient_search_ajax'),
+
 
 ]

@@ -1,0 +1,223 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}রোগী ব্যবস্থাপনা{% endblock %}
+{% block page_title %}চেম্বার — রোগী{% endblock %}
+
+{% block content %}
+<style>
+.patient-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid var(--green);display:flex;flex-direction:column;gap:6px}
+.patient-card .p-name{font-size:15px;font-weight:700;color:#1a2332}
+.patient-card .p-meta{font-size:12px;color:#888;display:flex;flex-wrap:wrap;gap:8px}
+.patient-card .p-meta span{display:flex;align-items:center;gap:4px}
+.patient-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:600px){.patient-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.patient-grid{grid-template-columns:repeat(3,1fr)}}
+.p-actions{display:flex;gap:6px;margin-top:6px}
+#phoneSearchResult{background:#e8f5e9;border:1px solid #c8e6c9;border-radius:8px;padding:10px 14px;margin-top:8px;display:none;font-size:13px}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>রোগী তালিকা</h1>
+    <div class="breadcrumb"><a href="{% url 'chamber_dashboard' %}">চেম্বার</a> › রোগী</div>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addPatientModal')"><i class="fas fa-plus"></i> নতুন রোগী</button>
+</div>
+
+<!-- Search bar -->
+<div class="card" style="padding:14px 16px;margin-bottom:16px">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap">
+    <input type="text" name="q" value="{{ q }}" class="form-control" style="max-width:340px" placeholder="নাম, ফোন বা Patient ID দিয়ে খুঁজুন...">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> খুঁজুন</button>
+    {% if q %}<a href="{% url 'chamber_patients' %}" class="btn btn-secondary">রিসেট</a>{% endif %}
+  </form>
+</div>
+
+{% if patients %}
+<div class="patient-grid">
+  {% for p in patients %}
+  <div class="patient-card">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="p-name">{{ p.name }}</div>
+      <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:20px;font-weight:600">{{ p.patient_id }}</span>
+    </div>
+    <div class="p-meta">
+      <span><i class="fas fa-phone"></i> {{ p.phone }}</span>
+      {% if p.age %}<span><i class="fas fa-birthday-cake"></i> {{ p.age }} বছর</span>{% endif %}
+      <span><i class="fas fa-venus-mars"></i> {{ p.get_gender_display }}</span>
+      <span><i class="fas fa-map-marker-alt"></i> {{ p.get_district_display }}{% if p.area %}, {{ p.area }}{% endif %}</span>
+    </div>
+    <div style="font-size:12px;color:#aaa"><i class="fas fa-calendar"></i> প্রথম ভিজিট: {{ p.first_visit_date|date:"d M Y" }} &nbsp;|&nbsp; মোট ভিজিট: {{ p.get_total_visits }}</div>
+    <div class="p-actions">
+      <a href="{% url 'chamber_patient_detail' p.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> ইতিহাস</a>
+      <button class="btn btn-warning btn-sm" onclick="openEditModal({{ p.pk }},'{{ p.name|escapejs }}','{{ p.phone }}','{{ p.age|default:'' }}','{{ p.gender }}','{{ p.district }}','{{ p.area|escapejs }}','{{ p.address|escapejs }}','{{ p.notes|escapejs }}')">
+        <i class="fas fa-edit"></i>
+      </button>
+      <form method="post" style="display:inline" onsubmit="return confirm('এই রোগী মুছে দেবেন?')">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="pk" value="{{ p.pk }}">
+        <button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state"><i class="fas fa-user-injured"></i><p>কোনো রোগী পাওয়া যায়নি</p></div>
+{% endif %}
+
+<!-- ADD PATIENT MODAL -->
+<div class="modal-overlay" id="addPatientModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-user-plus" style="color:#2e7d32"></i> নতুন রোগী যোগ করুন</span>
+      <button class="modal-close" onclick="closeModal('addPatientModal')">×</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="form-group">
+        <label>মোবাইল নম্বর <span style="color:red">*</span></label>
+        <input type="tel" name="phone" id="addPhone" class="form-control" placeholder="01XXXXXXXXX" required oninput="checkPhoneLive(this.value)">
+        <div id="phoneSearchResult"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>রোগীর নাম <span style="color:red">*</span></label>
+          <input type="text" name="name" class="form-control" placeholder="পুরো নাম লিখুন" required>
+        </div>
+        <div class="form-group">
+          <label>বয়স</label>
+          <input type="number" name="age" class="form-control" placeholder="বছরে" min="0" max="120">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>লিঙ্গ</label>
+          <select name="gender" class="form-control">
+            {% for val,label in gender_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>জেলা</label>
+          <select name="district" class="form-control">
+            {% for val,label in district_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>এলাকা</label>
+        <input type="text" name="area" class="form-control" placeholder="যেমন: মির্জাপুর, সাভার...">
+      </div>
+      <div class="form-group">
+        <label>ঠিকানা (ঐচ্ছিক)</label>
+        <textarea name="address" class="form-control" rows="2" placeholder="বিস্তারিত ঠিকানা"></textarea>
+      </div>
+      <div class="form-group">
+        <label>নোট</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="যেকোনো বিশেষ টীকা..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addPatientModal')">বাতিল</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT PATIENT MODAL -->
+<div class="modal-overlay" id="editPatientModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-edit" style="color:#f59e0b"></i> রোগীর তথ্য সম্পাদনা</span>
+      <button class="modal-close" onclick="closeModal('editPatientModal')">×</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="pk" id="editPk">
+      <div class="form-row">
+        <div class="form-group">
+          <label>নাম</label>
+          <input type="text" name="name" id="editName" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>ফোন</label>
+          <input type="tel" name="phone" id="editPhone" class="form-control" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>বয়স</label>
+          <input type="number" name="age" id="editAge" class="form-control" min="0" max="120">
+        </div>
+        <div class="form-group">
+          <label>লিঙ্গ</label>
+          <select name="gender" id="editGender" class="form-control">
+            {% for val,label in gender_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>জেলা</label>
+          <select name="district" id="editDistrict" class="form-control">
+            {% for val,label in district_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>এলাকা</label>
+          <input type="text" name="area" id="editArea" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ঠিকানা</label>
+        <textarea name="address" id="editAddress" class="form-control" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label>নোট</label>
+        <textarea name="notes" id="editNotes" class="form-control" rows="2"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editPatientModal')">বাতিল</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> আপডেট করুন</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditModal(pk, name, phone, age, gender, district, area, address, notes) {
+  document.getElementById('editPk').value = pk;
+  document.getElementById('editName').value = name;
+  document.getElementById('editPhone').value = phone;
+  document.getElementById('editAge').value = age;
+  document.getElementById('editGender').value = gender;
+  document.getElementById('editDistrict').value = district;
+  document.getElementById('editArea').value = area;
+  document.getElementById('editAddress').value = address;
+  document.getElementById('editNotes').value = notes;
+  openModal('editPatientModal');
+}
+
+let phoneTimer;
+function checkPhoneLive(val) {
+  clearTimeout(phoneTimer);
+  if (val.length < 10) { document.getElementById('phoneSearchResult').style.display='none'; return; }
+  phoneTimer = setTimeout(() => {
+    fetch(`{% url 'chamber_patient_search_ajax' %}?q=${val}`)
+      .then(r => r.json())
+      .then(data => {
+        const box = document.getElementById('phoneSearchResult');
+        if (data.results.length > 0) {
+          const p = data.results[0];
+          box.innerHTML = `<i class="fas fa-info-circle"></i> এই নম্বরে রোগী আছেন: <strong>${p.name}</strong> (${p.pid})`;
+          box.style.display = 'block';
+        } else {
+          box.style.display = 'none';
+        }
+      });
+  }, 400);
+}
+</script>
+{% endblock %}

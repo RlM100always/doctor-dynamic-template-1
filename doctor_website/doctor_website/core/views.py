@@ -8,7 +8,7 @@ from .models import (
     SiteSettings, TickerMessage, TrustChip, HeroDegree, AboutHighlight,
     Qualification, Certificate, Chamber, Service, FeeItem, FeeInfo,
     AppointmentSlot, Review, RatingBar, Video, BlogPost, MediaCoverage,
-    TeamMember, FAQ, ContactMessage
+    TeamMember, FAQ, ContactMessage,GalleryItem
 )
 
 
@@ -17,6 +17,8 @@ def home(request):
     site = SiteSettings.objects.first()
     # Check HeroDegree data
     hero_degrees = HeroDegree.objects.filter(is_active=True)
+    gallery_items = GalleryItem.objects.filter(is_active=True).order_by('order')
+
     
 
     
@@ -40,6 +42,8 @@ def home(request):
         'media_coverages': MediaCoverage.objects.filter(is_active=True),
         'team_members': TeamMember.objects.filter(is_active=True),
         'faqs': FAQ.objects.filter(is_active=True),
+        'gallery_items': gallery_items,
+
     }
     return render(request, 'core/home.html', context)
 

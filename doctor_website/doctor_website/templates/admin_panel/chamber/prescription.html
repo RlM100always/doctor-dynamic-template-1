@@ -1,0 +1,389 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>প্রেসক্রিপশন — {{ visit.patient.name }}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:#f4f6f9; }
+
+    /* Print button – hidden on print */
+    .print-controls {
+      background:#1a2332;
+      padding:12px 20px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .print-controls a, .print-controls button {
+      padding:8px 18px;
+      border-radius:7px;
+      font-size:13px;
+      cursor:pointer;
+      border:none;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-family:inherit;
+    }
+    .btn-print { background:#2e7d32; color:#fff; }
+    .btn-back  { background:#555; color:#fff; }
+
+    /* Prescription card */
+    .rx-wrapper {
+      max-width:800px;
+      margin:24px auto;
+      background:#fff;
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 4px 24px rgba(0,0,0,.10);
+    }
+
+    /* Header */
+    .rx-header {
+      background:linear-gradient(135deg,#0d2b1e 0%,#1b5e20 40%,#2e7d32 100%);
+      color:#fff;
+      padding:24px 30px 20px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:20px;
+      flex-wrap:wrap;
+    }
+    .rx-doctor h1 { font-size:22px; font-weight:800; letter-spacing:.3px; }
+    .rx-doctor .degree { font-size:13px; opacity:.85; margin:3px 0; }
+    .rx-doctor .spec {
+      display:inline-block;
+      background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);
+      border-radius:20px;
+      padding:3px 14px;
+      font-size:12px;
+      margin-top:6px;
+    }
+    .rx-doctor .bmdc { font-size:11px; opacity:.6; margin-top:8px; }
+
+    .rx-chamber-info { text-align:right; }
+    .rx-chamber-info .ch-name { font-size:14px; font-weight:700; }
+    .rx-chamber-info p { font-size:12px; opacity:.8; margin-top:3px; }
+
+    /* Date + patient bar */
+    .rx-meta {
+      background:#f9fafb;
+      border-bottom:2px solid #e5e7eb;
+      padding:14px 30px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:20px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .rx-date { font-size:13px; color:#555; }
+    .rx-serial {
+      background:#2e7d32;
+      color:#fff;
+      border-radius:6px;
+      padding:4px 14px;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    /* Patient info section */
+    .rx-patient {
+      padding:18px 30px 14px;
+      border-bottom:1px dashed #ddd;
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:10px;
+    }
+    .rx-field label { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:#999; display:block; }
+    .rx-field .val { font-size:14px; font-weight:600; color:#1a2332; margin-top:2px; border-bottom:1px solid #eee; padding-bottom:4px; }
+
+    /* Main body */
+    .rx-body { display:grid; grid-template-columns:1fr 2fr; min-height:340px; }
+    .rx-left {
+      border-right:2px dashed #ddd;
+      padding:20px 18px;
+    }
+    .rx-right { padding:20px 22px; }
+
+    .rx-section-title {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      color:#2e7d32;
+      font-weight:700;
+      margin-bottom:10px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .rx-section-title::after { content:''; flex:1; height:1px; background:#e0e0e0; }
+
+    .symptom-tag {
+      display:inline-block;
+      background:#f0f7f0;
+      color:#2e7d32;
+      border-radius:20px;
+      padding:3px 12px;
+      font-size:12px;
+      margin:3px 3px 3px 0;
+    }
+    .diag-tag {
+      display:inline-block;
+      background:#fff3e0;
+      color:#e65100;
+      border-radius:20px;
+      padding:3px 12px;
+      font-size:12px;
+      margin:3px 3px 3px 0;
+    }
+
+    /* Rx section */
+    .rx-symbol {
+      font-size:48px;
+      font-weight:900;
+      color:#2e7d32;
+      opacity:.12;
+      position:absolute;
+      top:10px;
+      right:14px;
+      font-style:italic;
+      font-family:serif;
+    }
+    .rx-right { position:relative; }
+    .rx-write-lines { margin-top:8px; }
+    .rx-write-lines .line {
+      border-bottom:1px solid #eee;
+      height:32px;
+      margin-bottom:4px;
+    }
+
+    /* Advice & followup */
+    .rx-footer-bar {
+      background:#f9fafb;
+      border-top:1px solid #eee;
+      padding:14px 30px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+      flex-wrap:wrap;
+    }
+    .rx-advice-box .adv-title {
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:.5px;
+      color:#888;
+      margin-bottom:6px;
+    }
+    .adv-line { border-bottom:1px solid #eee; height:26px; margin-bottom:4px; }
+
+    .rx-followup {
+      background:#e8f5e9;
+      border:1.5px dashed #a5d6a7;
+      border-radius:10px;
+      padding:12px 16px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .rx-followup i { font-size:24px; color:#2e7d32; }
+    .rx-followup .fu-label { font-size:11px; color:#666; }
+    .rx-followup .fu-date { font-size:16px; font-weight:700; color:#1b5e20; }
+
+    /* Footer */
+    .rx-bottom {
+      border-top:2px solid #2e7d32;
+      padding:14px 30px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      font-size:12px;
+      color:#666;
+    }
+    .rx-bottom .sig-area {
+      text-align:center;
+      min-width:140px;
+    }
+    .rx-bottom .sig-line {
+      border-bottom:1.5px solid #333;
+      width:140px;
+      height:40px;
+      margin:0 auto 6px;
+    }
+
+    /* PRINT STYLES */
+    @media print {
+      body { background:#fff; }
+      .print-controls { display:none !important; }
+      .rx-wrapper {
+        margin:0;
+        border-radius:0;
+        box-shadow:none;
+        max-width:100%;
+      }
+      .rx-body { min-height:300px; }
+    }
+
+    @media (max-width:640px) {
+      .rx-header { padding:18px 18px 16px; }
+      .rx-body { grid-template-columns:1fr; }
+      .rx-left { border-right:none; border-bottom:2px dashed #ddd; }
+      .rx-footer-bar { grid-template-columns:1fr; }
+      .rx-patient { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Controls (hidden on print) -->
+<div class="print-controls">
+  <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> প্রিন্ট করুন</button>
+  <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> ফিরে যান</a>
+</div>
+
+<!-- PRESCRIPTION -->
+<div class="rx-wrapper">
+
+  <!-- ── HEADER ── -->
+  <div class="rx-header">
+    <div class="rx-doctor">
+      <h1>{{ site.doctor_name_en }}</h1>
+      <div class="degree">{{ site.degrees }}</div>
+      <span class="spec">{{ site.specialty }}</span>
+      <div class="bmdc">BMDC Reg. No: XXXXXX</div>
+    </div>
+    <div class="rx-chamber-info">
+      <div class="ch-name">চেম্বার</div>
+      <p><i class="fas fa-map-marker-alt"></i> টাঙ্গাইল, ঢাকা বিভাগ</p>
+      <p><i class="fas fa-phone"></i> {{ site.phone }}</p>
+      {% if site.email %}<p><i class="fas fa-envelope"></i> {{ site.email }}</p>{% endif %}
+    </div>
+  </div>
+
+  <!-- ── DATE / SERIAL ── -->
+  <div class="rx-meta">
+    <div class="rx-date">
+      <i class="fas fa-calendar-alt" style="color:#2e7d32;margin-right:4px"></i>
+      তারিখ: <strong>{{ visit.visit_date|date:"d F, Y" }}</strong>
+    </div>
+    <span class="rx-serial">Visit #{{ visit.pk }}</span>
+  </div>
+
+  <!-- ── PATIENT INFO ── -->
+  <div class="rx-patient">
+    <div class="rx-field">
+      <label>রোগীর নাম</label>
+      <div class="val">{{ visit.patient.name }}</div>
+    </div>
+    {% if visit.patient.age %}
+    <div class="rx-field">
+      <label>বয়স</label>
+      <div class="val">{{ visit.patient.age }} বছর</div>
+    </div>
+    {% endif %}
+    <div class="rx-field">
+      <label>লিঙ্গ</label>
+      <div class="val">{{ visit.patient.get_gender_display }}</div>
+    </div>
+    <div class="rx-field">
+      <label>ফোন</label>
+      <div class="val">{{ visit.patient.phone }}</div>
+    </div>
+    <div class="rx-field">
+      <label>রোগীর ID</label>
+      <div class="val">{{ visit.patient.patient_id }}</div>
+    </div>
+  </div>
+
+  <!-- ── MAIN BODY ── -->
+  <div class="rx-body">
+
+    <!-- LEFT: Symptoms & Diagnosis -->
+    <div class="rx-left">
+      {% if visit.symptoms %}
+      <div class="rx-section-title"><i class="fas fa-comment-medical"></i> লক্ষণ</div>
+      <div style="margin-bottom:16px">
+       <span class="symptom-tag">{{ visit.symptoms }}</span>
+      </div>
+      {% else %}
+      <div class="rx-section-title"><i class="fas fa-comment-medical"></i> লক্ষণ</div>
+      <div class="adv-line"></div><div class="adv-line"></div><div class="adv-line"></div>
+      {% endif %}
+
+      {% if visit.diagnosis %}
+      <div class="rx-section-title" style="margin-top:16px"><i class="fas fa-diagnoses"></i> রোগ নির্ণয়</div>
+      <div>
+<span class="diag-tag">{{ visit.diagnosis }}</span>
+      </div>
+      {% else %}
+      <div class="rx-section-title" style="margin-top:16px"><i class="fas fa-diagnoses"></i> রোগ নির্ণয়</div>
+      <div class="adv-line"></div><div class="adv-line"></div>
+      {% endif %}
+
+      <div class="rx-section-title" style="margin-top:16px"><i class="fas fa-flask"></i> পরীক্ষা-নিরীক্ষা</div>
+      <div class="adv-line"></div><div class="adv-line"></div><div class="adv-line"></div>
+    </div>
+
+    <!-- RIGHT: Rx -->
+    <div class="rx-right">
+      <div class="rx-symbol">Rx</div>
+      <div class="rx-section-title"><i class="fas fa-prescription"></i> ঔষধ</div>
+      <div class="rx-write-lines">
+        {% for i in "12345678" %}
+        <div class="line"></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FOOTER BAR ── -->
+  <div class="rx-footer-bar">
+    <div class="rx-advice-box">
+      <div class="adv-title"><i class="fas fa-lightbulb" style="color:#f59e0b"></i> পরামর্শ / Advice</div>
+      <div class="adv-line"></div>
+      <div class="adv-line"></div>
+      <div class="adv-line"></div>
+    </div>
+    <div>
+      {% if visit.followup_date %}
+      <div class="rx-followup">
+        <i class="fas fa-calendar-check"></i>
+        <div>
+          <div class="fu-label">পরবর্তী ফলো-আপ</div>
+          <div class="fu-date">{{ visit.followup_date|date:"d F, Y" }}</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="rx-advice-box">
+        <div class="adv-title"><i class="fas fa-calendar-check" style="color:#2e7d32"></i> ফলো-আপ তারিখ</div>
+        <div style="border-bottom:2px dashed #a5d6a7;height:36px;border-radius:4px;background:#f9fafb;margin-top:6px"></div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── BOTTOM SIGNATURE ── -->
+  <div class="rx-bottom">
+    <div style="font-size:11px;color:#aaa">
+      <i class="fas fa-map-marker-alt"></i> টাঙ্গাইল, ঢাকা বিভাগ &nbsp;|&nbsp;
+      <i class="fas fa-phone"></i> {{ site.phone }}
+      {% if site.facebook_url %}&nbsp;|&nbsp;<i class="fab fa-facebook"></i> {{ site.facebook_url }}{% endif %}
+    </div>
+    <div class="sig-area">
+      <div class="sig-line"></div>
+      <div style="font-size:12px;font-weight:600;color:#1a2332">{{ site.doctor_name_en }}</div>
+      <div style="font-size:10px;color:#888">{{ site.degrees }}</div>
+    </div>
+  </div>
+
+</div><!-- /rx-wrapper -->
+</body>
+</html>

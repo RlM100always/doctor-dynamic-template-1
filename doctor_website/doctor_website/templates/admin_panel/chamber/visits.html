@@ -1,0 +1,217 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}ভিজিট ব্যবস্থাপনা{% endblock %}
+{% block page_title %}চেম্বার — ভিজিট{% endblock %}
+
+{% block content %}
+<style>
+.filter-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:flex-end}
+.filter-row .form-group{margin-bottom:0;min-width:150px}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>ভিজিট তালিকা</h1>
+    <div class="breadcrumb"><a href="{% url 'chamber_dashboard' %}">চেম্বার</a> › ভিজিট</div>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addVisitModal')"><i class="fas fa-plus"></i> নতুন ভিজিট</button>
+</div>
+
+<!-- Filters -->
+<div class="card" style="padding:14px 16px;margin-bottom:16px">
+  <form method="get">
+    <div class="filter-row">
+      <div class="form-group" style="flex:1;min-width:200px">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="রোগীর নাম বা ফোন...">
+      </div>
+      <div class="form-group">
+        <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <select name="type" class="form-control">
+          <option value="">সব ধরন</option>
+          {% for val,lbl in visit_types %}<option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ lbl }}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> ফিল্টার</button>
+      <a href="{% url 'chamber_visits' %}" class="btn btn-secondary">রিসেট</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>রোগী</th>
+          <th>তারিখ</th>
+          <th>ধরন</th>
+          <th>ডায়াগনোসিস</th>
+          <th>ফি</th>
+          <th>পেমেন্ট</th>
+          <th>ফলো-আপ</th>
+          <th>অ্যাকশন</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in visits %}
+        <tr>
+          <td>
+            <strong>{{ v.patient.name }}</strong>
+            <div class="text-muted">{{ v.patient.phone }}</div>
+          </td>
+          <td>{{ v.visit_date|date:"d M Y" }}</td>
+          <td>
+            {% if v.visit_type == 'new' %}
+              <span class="badge badge-success"><i class="fas fa-user-plus"></i> নতুন</span>
+            {% else %}
+              <span class="badge badge-info"><i class="fas fa-redo"></i> ফলো-আপ</span>
+            {% endif %}
+          </td>
+          <td>{{ v.diagnosis|truncatechars:40|default:"—" }}</td>
+          <td>৳{{ v.doctor_fee|floatformat:0 }}</td>
+          <td>
+            {% with pay=v.get_payment %}
+            {% if pay %}
+              <span class="badge {% if pay.payment_status == 'paid' %}badge-success{% elif pay.payment_status == 'due' %}badge-danger{% else %}badge-warning{% endif %}">
+                {{ pay.get_payment_status_display }}
+              </span>
+            {% else %}—{% endif %}
+            {% endwith %}
+          </td>
+          <td>{% if v.followup_date %}<span style="color:#1976d2;font-size:12px"><i class="fas fa-calendar-check"></i> {{ v.followup_date|date:"d M" }}</span>{% else %}—{% endif %}</td>
+          <td>
+            <div class="action-buttons">
+              <a href="{% url 'chamber_prescription' v.pk %}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="প্রেসক্রিপশন"><i class="fas fa-print"></i></a>
+              <a href="{% url 'chamber_patient_detail' v.patient.pk %}" class="btn btn-secondary btn-sm btn-icon" title="ইতিহাস"><i class="fas fa-history"></i></a>
+              <form method="post" style="display:inline" onsubmit="return confirm('ভিজিট মুছবেন?')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="pk" value="{{ v.pk }}">
+                <button class="btn btn-danger btn-sm btn-icon"><i class="fas fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8"><div class="empty-state"><i class="fas fa-clipboard-list"></i><p>কোনো ভিজিট নেই</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADD VISIT MODAL -->
+<div class="modal-overlay" id="addVisitModal">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-stethoscope" style="color:#2e7d32"></i> নতুন ভিজিট যোগ করুন</span>
+      <button class="modal-close" onclick="closeModal('addVisitModal')">×</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+
+      <!-- Patient search -->
+      <div class="form-group">
+        <label>রোগী খুঁজুন <span style="color:red">*</span></label>
+        <input type="text" id="visitPatientSearch" class="form-control" placeholder="নাম বা ফোন নম্বর দিন...">
+        <div id="visitSearchResults" style="border:1px solid #ddd;border-radius:8px;max-height:180px;overflow-y:auto;display:none;margin-top:4px"></div>
+        <input type="hidden" name="patient_id" id="selectedPatientId" required>
+        <div id="selectedPatientInfo" style="background:#e8f5e9;border-radius:6px;padding:8px 12px;margin-top:6px;font-size:13px;display:none"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>ভিজিটের তারিখ</label>
+          <input type="date" name="visit_date" class="form-control" value="{% now 'Y-m-d' %}">
+        </div>
+        <div class="form-group">
+          <label>ভিজিটের ধরন</label>
+          <select name="visit_type" class="form-control">
+            {% for val,lbl in visit_types %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>লক্ষণ (Symptoms)</label>
+        <textarea name="symptoms" class="form-control" rows="2" placeholder="রোগীর অভিযোগ ও লক্ষণ..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>রোগ নির্ণয় (Diagnosis)</label>
+        <textarea name="diagnosis" class="form-control" rows="2" placeholder="ডায়াগনোসিস..."></textarea>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>ডাক্তার ফি (৳)</label>
+          <input type="number" name="doctor_fee" class="form-control" placeholder="500" min="0">
+        </div>
+        <div class="form-group">
+          <label>পেমেন্ট পদ্ধতি</label>
+          <select name="payment_method" class="form-control">
+            {% for val,lbl in payment_methods %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>পেমেন্ট অবস্থা</label>
+          <select name="payment_status" class="form-control">
+            {% for val,lbl in payment_statuses %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>পরবর্তী ফলো-আপ তারিখ</label>
+        <input type="date" name="followup_date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>নোট</label>
+        <textarea name="notes" class="form-control" rows="2"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addVisitModal')">বাতিল</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> ভিজিট সংরক্ষণ</button>
+      </div>
+      
+    </form>
+  </div>
+</div>
+
+<script>
+let searchTimer;
+document.getElementById('visitPatientSearch').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  const q = this.value.trim();
+  const box = document.getElementById('visitSearchResults');
+  if (q.length < 2) { box.style.display='none'; return; }
+  searchTimer = setTimeout(() => {
+    fetch(`{% url 'chamber_patient_search_ajax' %}?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.results.length) { box.style.display='none'; return; }
+        box.innerHTML = data.results.map(p =>
+          `<div onclick="selectPatient(${p.id},'${p.name}','${p.phone}','${p.pid}')"
+            style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;display:flex;justify-content:space-between"
+            onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">
+            <strong>${p.name}</strong>
+            <span style="color:#888">${p.phone} · ${p.pid}</span>
+          </div>`
+        ).join('');
+        box.style.display='block';
+      });
+  }, 300);
+});
+
+function selectPatient(id, name, phone, pid) {
+  document.getElementById('selectedPatientId').value = id;
+  document.getElementById('visitPatientSearch').value = name + ' — ' + phone;
+  document.getElementById('visitSearchResults').style.display='none';
+  const info = document.getElementById('selectedPatientInfo');
+  info.innerHTML = `<i class="fas fa-check-circle" style="color:#2e7d32"></i> <strong>${name}</strong> | ${phone} | ${pid}`;
+  info.style.display='block';
+}
+</script>
+{% endblock %}

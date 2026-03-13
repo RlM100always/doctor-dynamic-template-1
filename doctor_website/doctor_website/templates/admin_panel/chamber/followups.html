@@ -1,0 +1,130 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}ফলো-আপ{% endblock %}
+{% block page_title %}চেম্বার — ফলো-আপ{% endblock %}
+
+{% block content %}
+<style>
+.fu-section{margin-bottom:24px}
+.fu-section-header{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;margin-bottom:12px;padding:10px 14px;border-radius:8px}
+.fu-section-header.today{background:#e8f5e9;color:#2e7d32}
+.fu-section-header.tomorrow{background:#e3f2fd;color:#1565c0}
+.fu-section-header.week{background:#fff8e1;color:#f57f17}
+.fu-section-header.overdue{background:#ffebee;color:#c62828}
+.fu-card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 6px rgba(0,0,0,.06);flex-wrap:wrap;gap:10px}
+.fu-card .name{font-size:14px;font-weight:700;color:#1a2332}
+.fu-card .sub{font-size:12px;color:#888;margin-top:2px}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>ফলো-আপ ক্যালেন্ডার</h1>
+    <div class="breadcrumb"><a href="{% url 'chamber_dashboard' %}">চেম্বার</a> › ফলো-আপ</div>
+  </div>
+</div>
+
+<!-- Today -->
+<div class="fu-section">
+  <div class="fu-section-header today">
+    <i class="fas fa-bell"></i> আজকের ফলো-আপ
+    <span style="background:#2e7d32;color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;margin-left:auto">{{ due_today.count }}</span>
+  </div>
+  {% if due_today %}
+    {% for v in due_today %}
+    <div class="fu-card">
+      <div>
+        <div class="name">{{ v.patient.name }}</div>
+        <div class="sub"><i class="fas fa-phone"></i> {{ v.patient.phone }} &nbsp;|&nbsp; <i class="fas fa-map-marker-alt"></i> {{ v.patient.get_district_display }}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a href="tel:{{ v.patient.phone }}" class="btn btn-primary btn-sm"><i class="fas fa-phone"></i> কল করুন</a>
+        <a href="{% url 'chamber_patient_detail' v.patient.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-history"></i></a>
+        <a href="{% url 'chamber_prescription' v.pk %}" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-print"></i></a>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="card" style="text-align:center;padding:24px;color:#888"><i class="fas fa-check-circle" style="font-size:32px;color:#2e7d32;margin-bottom:8px;display:block"></i>আজ কোনো ফলো-আপ নেই ✓</div>
+  {% endif %}
+</div>
+
+<!-- Tomorrow -->
+<div class="fu-section">
+  <div class="fu-section-header tomorrow">
+    <i class="fas fa-calendar-day"></i> আগামীকালের ফলো-আপ
+    <span style="background:#1565c0;color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;margin-left:auto">{{ due_tomorrow.count }}</span>
+  </div>
+  {% if due_tomorrow %}
+    {% for v in due_tomorrow %}
+    <div class="fu-card">
+      <div>
+        <div class="name">{{ v.patient.name }}</div>
+        <div class="sub"><i class="fas fa-phone"></i> {{ v.patient.phone }}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a href="tel:{{ v.patient.phone }}" class="btn btn-secondary btn-sm"><i class="fas fa-phone"></i></a>
+        <a href="{% url 'chamber_patient_detail' v.patient.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-history"></i></a>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="card" style="text-align:center;padding:16px;color:#aaa;font-size:13px">আগামীকাল কোনো ফলো-আপ নেই</div>
+  {% endif %}
+</div>
+
+<!-- This week -->
+<div class="fu-section">
+  <div class="fu-section-header week">
+    <i class="fas fa-calendar-week"></i> এই সপ্তাহের বাকি ফলো-আপ
+    <span style="background:#f57f17;color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;margin-left:auto">{{ due_week.count }}</span>
+  </div>
+  {% if due_week %}
+  <div class="table-responsive">
+    <table class="tbl" style="min-width:400px">
+      <thead><tr><th>তারিখ</th><th>রোগী</th><th>ফোন</th><th></th></tr></thead>
+      <tbody>
+        {% for v in due_week %}
+        <tr>
+          <td>{{ v.followup_date|date:"d M, l" }}</td>
+          <td><strong>{{ v.patient.name }}</strong></td>
+          <td>{{ v.patient.phone }}</td>
+          <td><a href="{% url 'chamber_patient_detail' v.patient.pk %}" class="btn btn-secondary btn-sm btn-icon"><i class="fas fa-eye"></i></a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="card" style="text-align:center;padding:16px;color:#aaa;font-size:13px">এই সপ্তাহে আর ফলো-আপ নেই</div>
+  {% endif %}
+</div>
+
+<!-- Overdue -->
+{% if overdue %}
+<div class="fu-section">
+  <div class="fu-section-header overdue">
+    <i class="fas fa-exclamation-triangle"></i> মেয়াদোত্তীর্ণ ফলো-আপ
+    <span style="background:#c62828;color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;margin-left:auto">{{ overdue.count }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="tbl" style="min-width:400px">
+      <thead><tr><th>নির্ধারিত ছিল</th><th>রোগী</th><th>ফোন</th><th></th></tr></thead>
+      <tbody>
+        {% for v in overdue %}
+        <tr>
+          <td><span style="color:#c62828">{{ v.followup_date|date:"d M Y" }}</span></td>
+          <td><strong>{{ v.patient.name }}</strong></td>
+          <td>{{ v.patient.phone }}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <a href="tel:{{ v.patient.phone }}" class="btn btn-primary btn-sm btn-icon"><i class="fas fa-phone"></i></a>
+              <a href="{% url 'chamber_patient_detail' v.patient.pk %}" class="btn btn-secondary btn-sm btn-icon"><i class="fas fa-eye"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}চেম্বার ড্যাশবোর্ড{% endblock %}
+{% block page_title %}চেম্বার ম্যানেজমেন্ট{% endblock %}
+
+{% block content %}
+<style>
+.chamber-grid{display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:900px){.chamber-grid{grid-template-columns:2fr 1fr}}
+.income-card{background:linear-gradient(135deg,#1a4a2e 0%,#2e7d32 100%);color:#fff;border-radius:14px;padding:22px 20px}
+.income-card h2{font-size:32px;font-weight:800;margin:6px 0 4px}
+.income-card p{opacity:.8;font-size:13px}
+.section-title{font-size:14px;font-weight:700;color:#1a2332;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+.fu-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f3f3}
+.fu-item:last-child{border-bottom:none}
+.fu-name{font-weight:600;font-size:13px}
+.fu-phone{font-size:12px;color:#888}
+.district-bar{margin-bottom:10px}
+.district-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.district-track{background:#f0f0f0;border-radius:20px;height:8px;overflow:hidden}
+.district-fill{background:var(--green);height:100%;border-radius:20px;transition:width .6s}
+.visit-type-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.pill-new{background:#e8f5e9;color:#2e7d32}
+.pill-followup{background:#e3f2fd;color:#1565c0}
+.quick-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:var(--green);color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:.2s}
+.quick-btn:hover{background:#43a047;transform:translateY(-1px)}
+.quick-btn-outline{background:transparent;border:2px solid var(--green);color:var(--green)}
+.quick-btn-outline:hover{background:var(--green-ll)}
+</style>
+
+<!-- Top stat cards -->
+<div class="stats-grid" style="margin-bottom:20px">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-user-injured"></i></div>
+    <div class="stat-info"><p>{{ visits_today_count }}</p><span>আজকের রোগী</span></div>
+  </div>
+  <div class="stat-card stat-card--amber">
+    <div class="stat-icon stat-icon--amber"><i class="fas fa-money-bill-wave"></i></div>
+    <div class="stat-info"><p>৳{{ income_today|floatformat:0 }}</p><span>আজকের আয়</span></div>
+  </div>
+  <div class="stat-card" style="border-left-color:#1976d2">
+    <div class="stat-icon stat-icon--blue"><i class="fas fa-calendar-alt"></i></div>
+    <div class="stat-info"><p>{{ visits_month_count }}</p><span>এ মাসে রোগী</span></div>
+  </div>
+  <div class="stat-card" style="border-left-color:#9c27b0">
+    <div class="stat-icon" style="background:#f3e5f5;color:#9c27b0"><i class="fas fa-coins"></i></div>
+    <div class="stat-info"><p>৳{{ income_this_month|floatformat:0 }}</p><span>এ মাসে আয়</span></div>
+  </div>
+  <div class="stat-card stat-card--red">
+    <div class="stat-icon stat-icon--red"><i class="fas fa-redo-alt"></i></div>
+    <div class="stat-info"><p>{{ followup_today.count }}</p><span>আজকের ফলো-আপ</span></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-users"></i></div>
+    <div class="stat-info"><p>{{ total_patients }}</p><span>মোট রোগী</span></div>
+  </div>
+</div>
+
+<!-- Quick actions -->
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px">
+  <a href="{% url 'chamber_quick_entry' %}" class="quick-btn"><i class="fas fa-bolt"></i> দ্রুত এন্ট্রি</a>
+  <a href="{% url 'chamber_patients' %}" class="quick-btn quick-btn-outline"><i class="fas fa-user-plus"></i> রোগী যোগ</a>
+  <a href="{% url 'chamber_visits' %}" class="quick-btn quick-btn-outline"><i class="fas fa-stethoscope"></i> ভিজিট</a>
+  <a href="{% url 'chamber_followups' %}" class="quick-btn quick-btn-outline"><i class="fas fa-calendar-check"></i> ফলো-আপ</a>
+  <a href="{% url 'chamber_analytics' %}" class="quick-btn quick-btn-outline"><i class="fas fa-chart-bar"></i> অ্যানালিটিক্স</a>
+</div>
+
+<div class="chamber-grid">
+  <!-- LEFT column -->
+  <div>
+    <!-- Monthly income chart -->
+    <div class="card">
+      <div class="card__header">
+        <span class="card__title"><i class="fas fa-chart-line" style="color:#2e7d32"></i> মাসিক আয় (শেষ ৬ মাস)</span>
+      </div>
+      <canvas id="incomeChart" height="90"></canvas>
+    </div>
+
+    <!-- Recent visits -->
+    <div class="card">
+      <div class="card__header">
+        <span class="card__title"><i class="fas fa-history" style="color:#1976d2"></i> সাম্প্রতিক ভিজিট</span>
+        <a href="{% url 'chamber_visits' %}" class="btn btn-primary btn-sm">সব দেখুন</a>
+      </div>
+      {% if recent_visits %}
+      <div class="table-responsive">
+        <table class="tbl">
+          <thead><tr><th>রোগী</th><th>তারিখ</th><th>ধরন</th><th>ফি</th><th>প্রেসক্রিপশন</th></tr></thead>
+          <tbody>
+            {% for v in recent_visits %}
+            <tr>
+              <td>
+                <strong>{{ v.patient.name }}</strong>
+                <div class="text-muted">{{ v.patient.phone }}</div>
+              </td>
+              <td>{{ v.visit_date|date:"d M Y" }}</td>
+              <td>
+                <span class="visit-type-pill {% if v.visit_type == 'new' %}pill-new{% else %}pill-followup{% endif %}">
+                  {% if v.visit_type == 'new' %}<i class="fas fa-user-plus"></i>{% else %}<i class="fas fa-redo"></i>{% endif %}
+                  {{ v.get_visit_type_display }}
+                </span>
+              </td>
+              <td>৳{{ v.doctor_fee|floatformat:0 }}</td>
+              <td><a href="{% url 'chamber_prescription' v.pk %}" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-print"></i></a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="fas fa-clipboard-list"></i><p>কোনো ভিজিট নেই</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- RIGHT column -->
+  <div>
+    <!-- Income summary -->
+    <div class="income-card" style="margin-bottom:20px">
+      <p style="opacity:.7;font-size:12px;text-transform:uppercase;letter-spacing:1px">এ মাসের আয়</p>
+      <h2>৳{{ income_this_month|floatformat:0 }}</h2>
+      <div style="display:flex;gap:16px;margin-top:10px">
+        <div>
+          <div style="font-size:18px;font-weight:700">{{ new_this_month }}</div>
+          <div style="font-size:11px;opacity:.7">নতুন রোগী</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,.2)"></div>
+        <div>
+          <div style="font-size:18px;font-weight:700">{{ followup_this_month }}</div>
+          <div style="font-size:11px;opacity:.7">ফলো-আপ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Follow-up today -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card__header">
+        <span class="card__title"><i class="fas fa-bell" style="color:#f59e0b"></i> আজকের ফলো-আপ</span>
+        <a href="{% url 'chamber_followups' %}" class="btn btn-secondary btn-sm">সব</a>
+      </div>
+      {% if followup_today %}
+        {% for v in followup_today %}
+        <div class="fu-item">
+          <div>
+            <div class="fu-name">{{ v.patient.name }}</div>
+            <div class="fu-phone"><i class="fas fa-phone" style="font-size:10px"></i> {{ v.patient.phone }}</div>
+          </div>
+          <a href="tel:{{ v.patient.phone }}" class="btn btn-primary btn-sm btn-icon"><i class="fas fa-phone"></i></a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:20px"><i class="fas fa-check-circle" style="color:#2e7d32"></i><p style="color:#2e7d32">আজকে কোনো ফলো-আপ নেই</p></div>
+      {% endif %}
+    </div>
+
+    <!-- Top districts -->
+    <div class="card">
+      <div class="card__title" style="margin-bottom:14px"><i class="fas fa-map-marker-alt" style="color:#e53935"></i> শীর্ষ এলাকা</div>
+      {% if top_districts %}
+        {% for d in top_districts %}
+        <div class="district-bar">
+          <div class="district-label">
+            <span>{{ d.district }}</span>
+            <span style="font-weight:700">{{ d.count }}</span>
+          </div>
+          <div class="district-track">
+            <div class="district-fill" style="width:{{ d.count|floatformat:0 }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">ডেটা নেই</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const labels = {{ chart_labels_json|safe }};
+const data   = {{ chart_data_json|safe }};
+new Chart(document.getElementById('incomeChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'আয় (৳)',
+      data,
+      backgroundColor: 'rgba(46,125,50,0.75)',
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { ticks: { callback: v => '৳' + v.toLocaleString() }, grid: { color: '#f0f0f0' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

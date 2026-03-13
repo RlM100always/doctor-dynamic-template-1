@@ -1,0 +1,80 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block title %}দ্রুত এন্ট্রি{% endblock %}
+{% block page_title %}দ্রুত রোগী এন্ট্রি{% endblock %}
+
+{% block content %}
+<style>
+.quick-card{max-width:520px;margin:0 auto}
+.big-input{font-size:18px !important;padding:14px 16px !important;height:56px}
+.quick-submit{width:100%;padding:16px;font-size:16px;font-weight:700;background:var(--green);color:#fff;border:none;border-radius:10px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.quick-submit:hover{background:#43a047;transform:translateY(-2px)}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1><i class="fas fa-bolt" style="color:#f59e0b"></i> দ্রুত এন্ট্রি</h1>
+    <div class="breadcrumb"><a href="{% url 'chamber_dashboard' %}">চেম্বার</a> › দ্রুত এন্ট্রি</div>
+  </div>
+  <a href="{% url 'chamber_dashboard' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> ড্যাশবোর্ড</a>
+</div>
+
+<div class="quick-card">
+  <div class="card">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:60px;height:60px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px;color:#2e7d32">
+        <i class="fas fa-user-plus"></i>
+      </div>
+      <h2 style="font-size:18px;color:#1a2332">রোগী দ্রুত যোগ করুন</h2>
+      <p style="color:#888;font-size:13px;margin-top:4px">ফোন নম্বর দিলে আগের রোগী হলে ফলো-আপ, নতুন হলে নতুন রোগী হবে</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>মোবাইল নম্বর <span style="color:red">*</span></label>
+        <input type="tel" name="phone" id="qPhone" class="form-control big-input" placeholder="01XXXXXXXXX" required autofocus oninput="checkPhone(this.value)">
+        <div id="phoneHint" style="margin-top:6px;font-size:13px;display:none"></div>
+      </div>
+      <div class="form-group">
+        <label>রোগীর নাম <span style="color:red">*</span></label>
+        <input type="text" name="name" id="qName" class="form-control big-input" placeholder="নাম লিখুন" required>
+      </div>
+      <div class="form-group">
+        <label>ডাক্তার ফি (৳)</label>
+        <input type="number" name="fee" class="form-control big-input" placeholder="500" min="0">
+      </div>
+      <button type="submit" class="quick-submit"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </form>
+  </div>
+
+  <div style="text-align:center;margin-top:16px">
+    <a href="{% url 'chamber_patients' %}" class="btn btn-secondary"><i class="fas fa-user-cog"></i> বিস্তারিত রোগী এন্ট্রি</a>
+  </div>
+</div>
+
+<script>
+let t;
+function checkPhone(val) {
+  const hint = document.getElementById('phoneHint');
+  const nameInput = document.getElementById('qName');
+  clearTimeout(t);
+  if (val.length < 10) { hint.style.display='none'; return; }
+  t = setTimeout(() => {
+    fetch(`{% url 'chamber_patient_search_ajax' %}?q=${val}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.results.length > 0) {
+          const p = data.results[0];
+          hint.innerHTML = `<span style="background:#e8f5e9;color:#2e7d32;padding:6px 12px;border-radius:8px;display:inline-block"><i class="fas fa-user-check"></i> পুরনো রোগী: <strong>${p.name}</strong> (${p.pid}) — ফলো-আপ হিসেবে যোগ হবে</span>`;
+          hint.style.display='block';
+          nameInput.value = p.name;
+        } else {
+          hint.innerHTML = `<span style="background:#e3f2fd;color:#1565c0;padding:6px 12px;border-radius:8px;display:inline-block"><i class="fas fa-user-plus"></i> নতুন রোগী</span>`;
+          hint.style.display='block';
+          nameInput.value = '';
+        }
+      });
+  }, 400);
+}
+</script>
+{% endblock %}

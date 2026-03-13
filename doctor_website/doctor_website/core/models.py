@@ -7,7 +7,10 @@ class SiteSettings(models.Model):
     doctor_name_en = models.CharField(max_length=200, default='Dr. Sanjida Islam Chowdhury')
     specialty = models.CharField(max_length=200, default='গাইনী ও প্রসূতি বিশেষজ্ঞ')
     degrees = models.CharField(max_length=300, default='MBBS · FCPS · MRCOG (UK)')
-    bio = models.TextField(default='')
+    # Replace the old 'bio' with two fields:
+    short_bio = models.TextField(verbose_name="সংক্ষিপ্ত পরিচয়", default="")
+    detailed_bio = models.TextField(verbose_name="বিস্তারিত পরিচয়", default="")
+
     phone = models.CharField(max_length=20, default='০১৮১১-২২৩৩৪৪')
     phone_raw = models.CharField(max_length=20, default='+8801811223344')
     whatsapp = models.CharField(max_length=20, default='+8801811223344')
@@ -380,3 +383,189 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.created_at.strftime('%d/%m/%Y')}"
+
+
+
+
+class GalleryItem(models.Model):
+    """Single image in doctor's gallery"""
+    title = models.CharField(max_length=200, blank=True, help_text="ছবির শিরোনাম (ঐচ্ছিক)")
+    image = models.ImageField(upload_to='gallery/', blank=True, null=True, help_text="আপলোড করুন ছবি")
+    image_url = models.URLField(blank=True, help_text="অথবা বাহ্যিক ছবির লিংক দিন")
+    order = models.IntegerField(default=0, help_text="ক্রম")
+    is_active = models.BooleanField(default=True, help_text="সক্রিয়")
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = 'গ্যালারির ছবি'
+        verbose_name_plural = 'গ্যালারির ছবি'
+
+    def __str__(self):
+        return self.title or f"ছবি #{self.id}"
+
+    def get_image_url(self):
+        """Return image URL from upload or external link"""
+        if self.image:
+            return self.image.url
+        return self.image_url or ''
+    
+    
+    
+    
+    """
+=============================================================================
+OFFLINE CHAMBER MANAGEMENT SYSTEM — MODELS
+=============================================================================
+Add these models to:  core/models.py  (append at the bottom)
+=============================================================================
+"""
+
+from django.db import models
+from django.utils import timezone
+
+
+# ─── DISTRICT / AREA CHOICES (Bangladesh) ────────────────────────────────────
+DISTRICT_CHOICES = [
+    ('tangail', 'টাঙ্গাইল'),
+    ('dhaka', 'ঢাকা'),
+    ('gazipur', 'গাজীপুর'),
+    ('narayanganj', 'নারায়ণগঞ্জ'),
+    ('manikganj', 'মানিকগঞ্জ'),
+    ('munshiganj', 'মুন্সিগঞ্জ'),
+    ('narsingdi', 'নরসিংদী'),
+    ('mymensingh', 'ময়মনসিংহ'),
+    ('jamalpur', 'জামালপুর'),
+    ('kishorganj', 'কিশোরগঞ্জ'),
+    ('other', 'অন্যান্য'),
+]
+
+GENDER_CHOICES = [
+    ('male', 'পুরুষ'),
+    ('female', 'মহিলা'),
+    ('other', 'অন্যান্য'),
+]
+
+VISIT_TYPE_CHOICES = [
+    ('new', 'নতুন রোগী'),
+    ('followup', 'ফলো-আপ'),
+]
+
+PAYMENT_METHOD_CHOICES = [
+    ('cash', 'নগদ'),
+    ('bkash', 'বিকাশ'),
+    ('nagad', 'নগদ (মোবাইল)'),
+    ('card', 'কার্ড'),
+]
+
+PAYMENT_STATUS_CHOICES = [
+    ('paid', 'পরিশোধিত'),
+    ('due', 'বাকি'),
+    ('partial', 'আংশিক'),
+]
+
+
+# ─── CHAMBER PATIENT ─────────────────────────────────────────────────────────
+class ChamberPatient(models.Model):
+    """Master record for each unique patient"""
+    patient_id      = models.CharField(max_length=20, unique=True, editable=False)
+    name            = models.CharField(max_length=200, verbose_name='রোগীর নাম')
+    phone           = models.CharField(max_length=20, unique=True, verbose_name='মোবাইল নম্বর')
+    age             = models.PositiveIntegerField(verbose_name='বয়স', null=True, blank=True)
+    gender          = models.CharField(max_length=10, choices=GENDER_CHOICES, default='female', verbose_name='লিঙ্গ')
+    district        = models.CharField(max_length=30, choices=DISTRICT_CHOICES, default='tangail', verbose_name='জেলা')
+    area            = models.CharField(max_length=200, verbose_name='এলাকা', blank=True)
+    address         = models.TextField(verbose_name='ঠিকানা', blank=True)
+    first_visit_date = models.DateField(default=timezone.now, verbose_name='প্রথম ভিজিটের তারিখ')
+    notes           = models.TextField(blank=True, verbose_name='নোট')
+    created_at      = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'চেম্বার রোগী'
+        verbose_name_plural = 'চেম্বার রোগী'
+
+    def __str__(self):
+        return f"{self.patient_id} — {self.name} ({self.phone})"
+
+    def save(self, *args, **kwargs):
+        if not self.patient_id:
+            # Auto-generate: CP-2025-0001
+            year = timezone.now().year
+            last = ChamberPatient.objects.filter(
+                patient_id__startswith=f'CP-{year}-'
+            ).order_by('patient_id').last()
+            if last:
+                num = int(last.patient_id.split('-')[-1]) + 1
+            else:
+                num = 1
+            self.patient_id = f'CP-{year}-{num:04d}'
+        super().save(*args, **kwargs)
+
+    def get_total_visits(self):
+        return self.visits.count()
+
+    def get_last_visit(self):
+        return self.visits.order_by('-visit_date').first()
+
+    def get_total_paid(self):
+        total = sum(p.total_amount for p in
+                    ChamberPayment.objects.filter(visit__patient=self, payment_status='paid'))
+        return total
+
+
+# ─── CHAMBER VISIT ────────────────────────────────────────────────────────────
+class ChamberVisit(models.Model):
+    """Each visit by a patient"""
+    patient         = models.ForeignKey(ChamberPatient, on_delete=models.CASCADE,
+                                        related_name='visits', verbose_name='রোগী')
+    visit_date      = models.DateField(default=timezone.now, verbose_name='ভিজিটের তারিখ')
+    visit_type      = models.CharField(max_length=10, choices=VISIT_TYPE_CHOICES,
+                                       default='new', verbose_name='ভিজিটের ধরন')
+    symptoms        = models.TextField(blank=True, verbose_name='লক্ষণ')
+    diagnosis       = models.TextField(blank=True, verbose_name='রোগ নির্ণয়')
+    followup_date   = models.DateField(null=True, blank=True, verbose_name='পরবর্তী ফলো-আপ তারিখ')
+    doctor_fee      = models.DecimalField(max_digits=8, decimal_places=2, default=0,
+                                          verbose_name='ডাক্তার ফি')
+    notes           = models.TextField(blank=True, verbose_name='নোট')
+    created_at      = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-visit_date', '-created_at']
+        verbose_name = 'ভিজিট'
+        verbose_name_plural = 'ভিজিটসমূহ'
+
+    def __str__(self):
+        return f"{self.patient.name} — {self.visit_date} ({self.get_visit_type_display()})"
+
+    def get_payment(self):
+        return ChamberPayment.objects.filter(visit=self).first()
+
+
+# ─── CHAMBER PAYMENT ─────────────────────────────────────────────────────────
+class ChamberPayment(models.Model):
+    """Payment record linked to a visit"""
+    visit               = models.OneToOneField(ChamberVisit, on_delete=models.CASCADE,
+                                               related_name='payment', verbose_name='ভিজিট')
+    consultation_fee    = models.DecimalField(max_digits=8, decimal_places=2, default=0,
+                                              verbose_name='পরামর্শ ফি')
+    additional_charge   = models.DecimalField(max_digits=8, decimal_places=2, default=0,
+                                              verbose_name='অতিরিক্ত চার্জ', blank=True)
+    total_amount        = models.DecimalField(max_digits=8, decimal_places=2, default=0,
+                                              verbose_name='মোট পরিমাণ')
+    payment_method      = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES,
+                                           default='cash', verbose_name='পেমেন্ট পদ্ধতি')
+    payment_status      = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES,
+                                           default='paid', verbose_name='পেমেন্ট অবস্থা')
+    created_at          = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'পেমেন্ট'
+        verbose_name_plural = 'পেমেন্টসমূহ'
+
+    def __str__(self):
+        return f"{self.visit.patient.name} — ৳{self.total_amount} ({self.get_payment_status_display()})"
+
+    def save(self, *args, **kwargs):
+        self.total_amount = (self.consultation_fee or 0) + (self.additional_charge or 0)
+        super().save(*args, **kwargs)
