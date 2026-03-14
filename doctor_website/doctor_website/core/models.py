@@ -424,19 +424,71 @@ from django.db import models
 from django.utils import timezone
 
 
-# ─── DISTRICT / AREA CHOICES (Bangladesh) ────────────────────────────────────
 DISTRICT_CHOICES = [
-    ('tangail', 'টাঙ্গাইল'),
+    ('bagerhat', 'বাগেরহাট'),
+    ('bandarban', 'বান্দরবান'),
+    ('barguna', 'বরগুনা'),
+    ('barishal', 'বরিশাল'),
+    ('bhola', 'ভোলা'),
+    ('bogura', 'বগুড়া'),
+    ('brahmanbaria', 'ব্রাহ্মণবাড়িয়া'),
+    ('chandpur', 'চাঁদপুর'),
+    ('chattogram', 'চট্টগ্রাম'),
+    ('chuadanga', 'চুয়াডাঙ্গা'),
+    ('cumilla', 'কুমিল্লা'),
+    ('coxs_bazar', 'কক্সবাজার'),
     ('dhaka', 'ঢাকা'),
+    ('dinajpur', 'দিনাজপুর'),
+    ('faridpur', 'ফরিদপুর'),
+    ('feni', 'ফেনী'),
+    ('gaibandha', 'গাইবান্ধা'),
     ('gazipur', 'গাজীপুর'),
-    ('narayanganj', 'নারায়ণগঞ্জ'),
-    ('manikganj', 'মানিকগঞ্জ'),
-    ('munshiganj', 'মুন্সিগঞ্জ'),
-    ('narsingdi', 'নরসিংদী'),
-    ('mymensingh', 'ময়মনসিংহ'),
+    ('gopalganj', 'গোপালগঞ্জ'),
+    ('habiganj', 'হবিগঞ্জ'),
+    ('jaipurhat', 'জয়পুরহাট'),
     ('jamalpur', 'জামালপুর'),
-    ('kishorganj', 'কিশোরগঞ্জ'),
-    ('other', 'অন্যান্য'),
+    ('jashore', 'যশোর'),
+    ('jhalokathi', 'ঝালকাঠি'),
+    ('jhenaidah', 'ঝিনাইদহ'),
+    ('khagrachari', 'খাগড়াছড়ি'),
+    ('khulna', 'খুলনা'),
+    ('kishoreganj', 'কিশোরগঞ্জ'),
+    ('kurigram', 'কুড়িগ্রাম'),
+    ('kushtia', 'কুষ্টিয়া'),
+    ('lakshmipur', 'লক্ষ্মীপুর'),
+    ('lalmonirhat', 'লালমনিরহাট'),
+    ('madaripur', 'মাদারীপুর'),
+    ('magura', 'মাগুরা'),
+    ('manikganj', 'মানিকগঞ্জ'),
+    ('meherpur', 'মেহেরপুর'),
+    ('moulvibazar', 'মৌলভীবাজার'),
+    ('munshiganj', 'মুন্সীগঞ্জ'),
+    ('mymensingh', 'ময়মনসিংহ'),
+    ('naogaon', 'নওগাঁ'),
+    ('narail', 'নড়াইল'),
+    ('narayanganj', 'নারায়ণগঞ্জ'),
+    ('narsingdi', 'নরসিংদী'),
+    ('natore', 'নাটোর'),
+    ('netrokona', 'নেত্রকোনা'),
+    ('nilphamari', 'নীলফামারী'),
+    ('noakhali', 'নোয়াখালী'),
+    ('pabna', 'পাবনা'),
+    ('panchagarh', 'পঞ্চগড়'),
+    ('patuakhali', 'পটুয়াখালী'),
+    ('pirojpur', 'পিরোজপুর'),
+    ('rajbari', 'রাজবাড়ী'),
+    ('rajshahi', 'রাজশাহী'),
+    ('rangamati', 'রাঙ্গামাটি'),
+    ('rangpur', 'রংপুর'),
+    ('satkhira', 'সাতক্ষীরা'),
+    ('shariatpur', 'শরীয়তপুর'),
+    ('sherpur', 'শেরপুর'),
+    ('sirajganj', 'সিরাজগঞ্জ'),
+    ('sunamganj', 'সুনামগঞ্জ'),
+    ('sylhet', 'সিলেট'),
+    ('tangail', 'টাঙ্গাইল'),
+    ('thakurgaon', 'ঠাকুরগাঁও'),
+    ('chapainawabganj', 'চাঁপাইনবাবগঞ্জ'), # এই জেলাটি আগে ছিল না
 ]
 
 GENDER_CHOICES = [
@@ -464,16 +516,33 @@ PAYMENT_STATUS_CHOICES = [
 ]
 
 
-# ─── CHAMBER PATIENT ─────────────────────────────────────────────────────────
+# ─── AREA (under district) ───────────────────────────────────────────────
+class Area(models.Model):
+    name = models.CharField(max_length=200, verbose_name='এলাকার নাম')
+    district = models.CharField(max_length=30, choices=DISTRICT_CHOICES, verbose_name='জেলা')
+    is_active = models.BooleanField(default=True, verbose_name='সক্রিয়')
+
+    class Meta:
+        unique_together = ('name', 'district')   # same area name can exist in different districts
+        ordering = ['district', 'name']
+        verbose_name = 'এলাকা'
+        verbose_name_plural = 'এলাকা'
+
+    def __str__(self):
+        return f"{self.name} ({self.get_district_display()})"
+
+
+# ─── CHAMBER PATIENT (modified) ─────────────────────────────────────────
 class ChamberPatient(models.Model):
     """Master record for each unique patient"""
     patient_id      = models.CharField(max_length=20, unique=True, editable=False)
     name            = models.CharField(max_length=200, verbose_name='রোগীর নাম')
     phone           = models.CharField(max_length=20, unique=True, verbose_name='মোবাইল নম্বর')
     age             = models.PositiveIntegerField(verbose_name='বয়স', null=True, blank=True)
-    gender          = models.CharField(max_length=10, choices=GENDER_CHOICES, default='female', verbose_name='লিঙ্গ')
-    district        = models.CharField(max_length=30, choices=DISTRICT_CHOICES, default='tangail', verbose_name='জেলা')
-    area            = models.CharField(max_length=200, verbose_name='এলাকা', blank=True)
+    gender          = models.CharField(max_length=10, choices=GENDER_CHOICES, null=True, blank=True, verbose_name='লিঙ্গ')
+    district        = models.CharField(max_length=30, choices=DISTRICT_CHOICES, null=True, blank=True, verbose_name='জেলা')
+    # area is now a ForeignKey (instead of CharField)
+    area            = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='এলাকা')
     address         = models.TextField(verbose_name='ঠিকানা', blank=True)
     first_visit_date = models.DateField(default=timezone.now, verbose_name='প্রথম ভিজিটের তারিখ')
     notes           = models.TextField(blank=True, verbose_name='নোট')
@@ -488,8 +557,8 @@ class ChamberPatient(models.Model):
         return f"{self.patient_id} — {self.name} ({self.phone})"
 
     def save(self, *args, **kwargs):
+        # Auto-generate patient_id if not set
         if not self.patient_id:
-            # Auto-generate: CP-2025-0001
             year = timezone.now().year
             last = ChamberPatient.objects.filter(
                 patient_id__startswith=f'CP-{year}-'
@@ -499,6 +568,12 @@ class ChamberPatient(models.Model):
             else:
                 num = 1
             self.patient_id = f'CP-{year}-{num:04d}'
+
+        # Ensure district matches the selected area's district (if area is set)
+        if self.area and self.area.district != self.district:
+            # Option 1: Auto‑correct district from area
+            self.district = self.area.district
+            # Option 2: raise validation error (we'll handle in form)
         super().save(*args, **kwargs)
 
     def get_total_visits(self):
@@ -511,8 +586,7 @@ class ChamberPatient(models.Model):
         total = sum(p.total_amount for p in
                     ChamberPayment.objects.filter(visit__patient=self, payment_status='paid'))
         return total
-
-
+    
 # ─── CHAMBER VISIT ────────────────────────────────────────────────────────────
 class ChamberVisit(models.Model):
     """Each visit by a patient"""

@@ -84,7 +84,7 @@
       {% if recent_visits %}
       <div class="table-responsive">
         <table class="tbl">
-          <thead><tr><th>রোগী</th><th>তারিখ</th><th>ধরন</th><th>ফি</th><th>প্রেসক্রিপশন</th></tr></thead>
+          <thead><tr><th>রোগী</th><th>তারিখ</th><th>ধরন</th><th>ফি</th></tr></thead>
           <tbody>
             {% for v in recent_visits %}
             <tr>
@@ -100,7 +100,6 @@
                 </span>
               </td>
               <td>৳{{ v.doctor_fee|floatformat:0 }}</td>
-              <td><a href="{% url 'chamber_prescription' v.pk %}" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-print"></i></a></td>
             </tr>
             {% endfor %}
           </tbody>

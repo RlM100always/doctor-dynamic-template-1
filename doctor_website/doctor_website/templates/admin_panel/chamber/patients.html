@@ -13,6 +13,38 @@
 @media(min-width:1000px){.patient-grid{grid-template-columns:repeat(3,1fr)}}
 .p-actions{display:flex;gap:6px;margin-top:6px}
 #phoneSearchResult{background:#e8f5e9;border:1px solid #c8e6c9;border-radius:8px;padding:10px 14px;margin-top:8px;display:none;font-size:13px}
+/* Pagination styles */
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pagination .step-links {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 40px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.pagination a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+.pagination a:hover {
+  background: #e8f5e9;
+}
+.pagination .current {
+  font-weight: 600;
+  color: #1a2332;
+}
 </style>
 
 <div class="page-header">
@@ -32,6 +64,11 @@
   </form>
 </div>
 
+<!-- Hidden JSON data for areas -->
+<script>
+  window.areasByDistrict = {{ areas_by_district_json|safe }};
+</script>
+
 {% if patients %}
 <div class="patient-grid">
   {% for p in patients %}
@@ -44,12 +81,12 @@
       <span><i class="fas fa-phone"></i> {{ p.phone }}</span>
       {% if p.age %}<span><i class="fas fa-birthday-cake"></i> {{ p.age }} বছর</span>{% endif %}
       <span><i class="fas fa-venus-mars"></i> {{ p.get_gender_display }}</span>
-      <span><i class="fas fa-map-marker-alt"></i> {{ p.get_district_display }}{% if p.area %}, {{ p.area }}{% endif %}</span>
+      <span><i class="fas fa-map-marker-alt"></i> {{ p.get_district_display }}{% if p.area %}, {{ p.area.name }}{% endif %}</span>
     </div>
     <div style="font-size:12px;color:#aaa"><i class="fas fa-calendar"></i> প্রথম ভিজিট: {{ p.first_visit_date|date:"d M Y" }} &nbsp;|&nbsp; মোট ভিজিট: {{ p.get_total_visits }}</div>
     <div class="p-actions">
       <a href="{% url 'chamber_patient_detail' p.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> ইতিহাস</a>
-      <button class="btn btn-warning btn-sm" onclick="openEditModal({{ p.pk }},'{{ p.name|escapejs }}','{{ p.phone }}','{{ p.age|default:'' }}','{{ p.gender }}','{{ p.district }}','{{ p.area|escapejs }}','{{ p.address|escapejs }}','{{ p.notes|escapejs }}')">
+      <button class="btn btn-warning btn-sm" onclick="openEditModal({{ p.pk }},'{{ p.name|escapejs }}','{{ p.phone }}','{{ p.age|default:'' }}','{{ p.gender }}','{{ p.district }}',{% if p.area %}{{ p.area.id }}{% else %}null{% endif %},'{{ p.area.name|default:''|escapejs }}','{{ p.address|escapejs }}','{{ p.notes|escapejs }}')">
         <i class="fas fa-edit"></i>
       </button>
       <form method="post" style="display:inline" onsubmit="return confirm('এই রোগী মুছে দেবেন?')">
@@ -62,6 +99,28 @@
   </div>
   {% endfor %}
 </div>
+
+<!-- Pagination -->
+{% if patients.has_other_pages %}
+<div class="pagination">
+  <span class="step-links">
+    {% if patients.has_previous %}
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}page=1">&laquo; প্রথম</a>
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}page={{ patients.previous_page_number }}">পূর্ববর্তী</a>
+    {% endif %}
+
+    <span class="current">
+      পৃষ্ঠা {{ patients.number }} / {{ patients.paginator.num_pages }}
+    </span>
+
+    {% if patients.has_next %}
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}page={{ patients.next_page_number }}">পরবর্তী</a>
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}page={{ patients.paginator.num_pages }}">শেষ &raquo;</a>
+    {% endif %}
+  </span>
+</div>
+{% endif %}
+
 {% else %}
 <div class="empty-state"><i class="fas fa-user-injured"></i><p>কোনো রোগী পাওয়া যায়নি</p></div>
 {% endif %}
@@ -100,14 +159,20 @@
         </div>
         <div class="form-group">
           <label>জেলা</label>
-          <select name="district" class="form-control">
+          <select name="district" id="addDistrict" class="form-control" onchange="updateAreaDropdown('add')">
             {% for val,label in district_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
           </select>
         </div>
       </div>
+      <!-- Area dropdown with + button -->
       <div class="form-group">
         <label>এলাকা</label>
-        <input type="text" name="area" class="form-control" placeholder="যেমন: মির্জাপুর, সাভার...">
+        <div style="display: flex; gap: 5px; align-items: center;">
+          <select name="area" id="addArea" class="form-control" style="flex:1;">
+            <option value="">-- নির্বাচন করুন --</option>
+          </select>
+          <button type="button" class="btn btn-outline-secondary" onclick="showAddAreaModal('add')" title="নতুন এলাকা যোগ করুন"><i class="fas fa-plus"></i></button>
+        </div>
       </div>
       <div class="form-group">
         <label>ঠিকানা (ঐচ্ছিক)</label>
@@ -161,13 +226,19 @@
       <div class="form-row">
         <div class="form-group">
           <label>জেলা</label>
-          <select name="district" id="editDistrict" class="form-control">
+          <select name="district" id="editDistrict" class="form-control" onchange="updateAreaDropdown('edit')">
             {% for val,label in district_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
           </select>
         </div>
+        <!-- Area dropdown with + button -->
         <div class="form-group">
           <label>এলাকা</label>
-          <input type="text" name="area" id="editArea" class="form-control">
+          <div style="display: flex; gap: 5px; align-items: center;">
+            <select name="area" id="editArea" class="form-control" style="flex:1;">
+              <option value="">-- নির্বাচন করুন --</option>
+            </select>
+            <button type="button" class="btn btn-outline-secondary" onclick="showAddAreaModal('edit')" title="নতুন এলাকা যোগ করুন"><i class="fas fa-plus"></i></button>
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -186,17 +257,107 @@
   </div>
 </div>
 
+<!-- ADD AREA MODAL (new) -->
+<div class="modal-overlay" id="addAreaModal">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-map-marker-alt" style="color:#2e7d32"></i> নতুন এলাকা যোগ করুন</span>
+      <button class="modal-close" onclick="closeModal('addAreaModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>জেলা</label>
+        <input type="text" id="modalAreaDistrict" class="form-control" readonly>
+      </div>
+      <div class="form-group">
+        <label>এলাকার নাম <span style="color:red">*</span></label>
+        <input type="text" id="modalAreaName" class="form-control" placeholder="যেমন: মির্জাপুর, সখীপুর...">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;padding:16px;">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('addAreaModal')">বাতিল</button>
+      <button type="button" class="btn btn-primary" onclick="submitNewArea()"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
+    </div>
+  </div>
+</div>
+
 <script>
-function openEditModal(pk, name, phone, age, gender, district, area, address, notes) {
+// Variables to track which modal (add/edit) triggered the area modal
+let currentAreaModalPrefix = 'add';
+
+function showAddAreaModal(prefix) {
+  currentAreaModalPrefix = prefix;
+  const districtSelect = document.getElementById(prefix + 'District');
+  const district = districtSelect.value;
+  if (!district) {
+    alert('প্রথমে জেলা নির্বাচন করুন।');
+    return;
+  }
+  document.getElementById('modalAreaDistrict').value = districtSelect.options[districtSelect.selectedIndex].text;
+  document.getElementById('modalAreaName').value = '';
+  openModal('addAreaModal');
+}
+
+function submitNewArea() {
+  const areaName = document.getElementById('modalAreaName').value.trim();
+  if (!areaName) {
+    alert('এলাকার নাম লিখুন।');
+    return;
+  }
+
+  const districtSelect = document.getElementById(currentAreaModalPrefix + 'District');
+  const district = districtSelect.value;
+
+  fetch('{% url "chamber_add_area_ajax" %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      'district': district,
+      'area_name': areaName
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      alert('ত্রুটি: ' + data.error);
+      return;
+    }
+    // Add new area to local cache
+    if (!window.areasByDistrict[district]) {
+      window.areasByDistrict[district] = [];
+    }
+    window.areasByDistrict[district].push({ id: data.id, name: data.name });
+
+    // Refresh the area dropdown in the correct modal and select the new area
+    updateAreaDropdown(currentAreaModalPrefix, function() {
+      document.getElementById(currentAreaModalPrefix + 'Area').value = data.id;
+    });
+
+    closeModal('addAreaModal');
+  })
+  .catch(error => {
+    alert('নেটওয়ার্ক ত্রুটি।');
+    console.error(error);
+  });
+}
+
+function openEditModal(pk, name, phone, age, gender, district, areaId, areaName, address, notes) {
   document.getElementById('editPk').value = pk;
   document.getElementById('editName').value = name;
   document.getElementById('editPhone').value = phone;
   document.getElementById('editAge').value = age;
   document.getElementById('editGender').value = gender;
   document.getElementById('editDistrict').value = district;
-  document.getElementById('editArea').value = area;
   document.getElementById('editAddress').value = address;
   document.getElementById('editNotes').value = notes;
+
+  // Update area dropdown based on selected district, then set the value
+  updateAreaDropdown('edit', function() {
+    document.getElementById('editArea').value = areaId || '';
+  });
   openModal('editPatientModal');
 }
 
@@ -219,5 +380,33 @@ function checkPhoneLive(val) {
       });
   }, 400);
 }
+
+// Populate area dropdown based on selected district
+function updateAreaDropdown(modalPrefix, callback) {
+  const districtSelect = document.getElementById(modalPrefix + 'District');
+  const areaSelect = document.getElementById(modalPrefix + 'Area');
+  const selectedDistrict = districtSelect.value;
+
+  // Clear current options
+  areaSelect.innerHTML = '<option value="">-- নির্বাচন করুন --</option>';
+
+  if (selectedDistrict && window.areasByDistrict[selectedDistrict]) {
+    window.areasByDistrict[selectedDistrict].forEach(area => {
+      const option = document.createElement('option');
+      option.value = area.id;
+      option.textContent = area.name;
+      areaSelect.appendChild(option);
+    });
+  }
+
+  if (callback) callback();
+}
+
+// Call when page loads to set initial area dropdown (if any)
+document.addEventListener('DOMContentLoaded', function() {
+  // For add modal, default district already selected
+  updateAreaDropdown('add');
+  // For edit modal, will be called when opening
+});
 </script>
 {% endblock %}

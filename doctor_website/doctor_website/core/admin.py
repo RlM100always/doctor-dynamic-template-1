@@ -3,7 +3,7 @@ from .models import (
     SiteSettings, TickerMessage, TrustChip, HeroDegree, AboutHighlight,
     Qualification, Certificate, Chamber, Service, FeeItem, FeeInfo,
     AppointmentSlot, Review, RatingBar, Video, BlogPost, MediaCoverage,
-    TeamMember, FAQ, ContactMessage
+    TeamMember, FAQ, ContactMessage,ChamberPayment,Area,ChamberPatient,ChamberVisit
 )
 from .models import GalleryItem
 
@@ -35,3 +35,8 @@ admin.site.register(MediaCoverage)
 admin.site.register(TeamMember)
 admin.site.register(FAQ)
 admin.site.register(ContactMessage)
+admin.site.register(Area)
+admin.site.register(ChamberPatient)
+admin.site.register(ChamberVisit)
+admin.site.register(ChamberPayment)
+

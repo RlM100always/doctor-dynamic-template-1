@@ -6,6 +6,40 @@
 <style>
 .filter-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:flex-end}
 .filter-row .form-group{margin-bottom:0;min-width:150px}
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pagination .step-links {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 40px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.pagination a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+.pagination a:hover { background: #e8f5e9; }
+.pagination .current { font-weight: 600; color: #1a2332; }
+.total-count {
+  background: #e8f5e9;
+  border-radius: 40px;
+  padding: 6px 16px;
+  font-size: 14px;
+  display: inline-block;
+  margin-bottom: 16px;
+}
 </style>
 
 <div class="page-header">
@@ -18,13 +52,16 @@
 
 <!-- Filters -->
 <div class="card" style="padding:14px 16px;margin-bottom:16px">
-  <form method="get">
+  <form method="get" id="filterForm">
     <div class="filter-row">
       <div class="form-group" style="flex:1;min-width:200px">
         <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="রোগীর নাম বা ফোন...">
       </div>
       <div class="form-group">
-        <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+        <input type="date" name="start_date" value="{{ start_date }}" class="form-control" placeholder="শুরুর তারিখ">
+      </div>
+      <div class="form-group">
+        <input type="date" name="end_date" value="{{ end_date }}" class="form-control" placeholder="শেষ তারিখ">
       </div>
       <div class="form-group">
         <select name="type" class="form-control">
@@ -32,10 +69,23 @@
           {% for val,lbl in visit_types %}<option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ lbl }}</option>{% endfor %}
         </select>
       </div>
+      <div class="form-group">
+        <select name="sort" class="form-control">
+          <option value="-visit_date" {% if sort_by == '-visit_date' %}selected{% endif %}>তারিখ (নতুন প্রথম)</option>
+          <option value="visit_date" {% if sort_by == 'visit_date' %}selected{% endif %}>তারিখ (পুরনো প্রথম)</option>
+          <option value="patient__name" {% if sort_by == 'patient__name' %}selected{% endif %}>রোগীর নাম (ক্রম)</option>
+          <option value="-patient__name" {% if sort_by == '-patient__name' %}selected{% endif %}>রোগীর নাম (বিপরীত)</option>
+        </select>
+      </div>
       <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> ফিল্টার</button>
       <a href="{% url 'chamber_visits' %}" class="btn btn-secondary">রিসেট</a>
     </div>
   </form>
+</div>
+
+<!-- Total count -->
+<div class="total-count">
+  <i class="fas fa-list"></i> মোট ভিজিট: <strong>{{ total_count }}</strong> টি
 </div>
 
 <div class="card">
@@ -55,7 +105,16 @@
       </thead>
       <tbody>
         {% for v in visits %}
-        <tr>
+        <tr id="visit-row-{{ v.pk }}"
+            data-visit-date="{{ v.visit_date|date:'Y-m-d' }}"
+            data-visit-type="{{ v.visit_type }}"
+            data-symptoms="{{ v.symptoms|escapejs }}"
+            data-diagnosis="{{ v.diagnosis|escapejs }}"
+            data-followup-date="{{ v.followup_date|date:'Y-m-d'|default:'' }}"
+            data-doctor-fee="{{ v.doctor_fee }}"
+            data-notes="{{ v.notes|escapejs }}"
+            data-payment-method="{{ v.payment.payment_method|default:'cash' }}"
+            data-payment-status="{{ v.payment.payment_status|default:'paid' }}">
           <td>
             <strong>{{ v.patient.name }}</strong>
             <div class="text-muted">{{ v.patient.phone }}</div>
@@ -71,7 +130,7 @@
           <td>{{ v.diagnosis|truncatechars:40|default:"—" }}</td>
           <td>৳{{ v.doctor_fee|floatformat:0 }}</td>
           <td>
-            {% with pay=v.get_payment %}
+            {% with pay=v.payment %}
             {% if pay %}
               <span class="badge {% if pay.payment_status == 'paid' %}badge-success{% elif pay.payment_status == 'due' %}badge-danger{% else %}badge-warning{% endif %}">
                 {{ pay.get_payment_status_display }}
@@ -82,8 +141,8 @@
           <td>{% if v.followup_date %}<span style="color:#1976d2;font-size:12px"><i class="fas fa-calendar-check"></i> {{ v.followup_date|date:"d M" }}</span>{% else %}—{% endif %}</td>
           <td>
             <div class="action-buttons">
-              <a href="{% url 'chamber_prescription' v.pk %}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="প্রেসক্রিপশন"><i class="fas fa-print"></i></a>
               <a href="{% url 'chamber_patient_detail' v.patient.pk %}" class="btn btn-secondary btn-sm btn-icon" title="ইতিহাস"><i class="fas fa-history"></i></a>
+              <button class="btn btn-warning btn-sm btn-icon" onclick="openEditVisitModal({{ v.pk }})" title="সম্পাদনা"><i class="fas fa-edit"></i></button>
               <form method="post" style="display:inline" onsubmit="return confirm('ভিজিট মুছবেন?')">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="delete">
@@ -100,6 +159,27 @@
     </table>
   </div>
 </div>
+
+<!-- Pagination -->
+{% if visits.has_other_pages %}
+<div class="pagination">
+  <span class="step-links">
+    {% if visits.has_previous %}
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if type_filter %}type={{ type_filter }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}page=1">&laquo; প্রথম</a>
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if type_filter %}type={{ type_filter }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}page={{ visits.previous_page_number }}">পূর্ববর্তী</a>
+    {% endif %}
+
+    <span class="current">
+      পৃষ্ঠা {{ visits.number }} / {{ visits.paginator.num_pages }}
+    </span>
+
+    {% if visits.has_next %}
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if type_filter %}type={{ type_filter }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}page={{ visits.next_page_number }}">পরবর্তী</a>
+      <a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if type_filter %}type={{ type_filter }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}page={{ visits.paginator.num_pages }}">শেষ &raquo;</a>
+    {% endif %}
+  </span>
+</div>
+{% endif %}
 
 <!-- ADD VISIT MODAL -->
 <div class="modal-overlay" id="addVisitModal">
@@ -146,7 +226,7 @@
       <div class="form-row-3">
         <div class="form-group">
           <label>ডাক্তার ফি (৳)</label>
-          <input type="number" name="doctor_fee" class="form-control" placeholder="500" min="0">
+          <input type="number" name="doctor_fee" class="form-control" placeholder="500" min="0" step="any">
         </div>
         <div class="form-group">
           <label>পেমেন্ট পদ্ধতি</label>
@@ -175,7 +255,82 @@
         <button type="button" class="btn btn-secondary" onclick="closeModal('addVisitModal')">বাতিল</button>
         <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> ভিজিট সংরক্ষণ</button>
       </div>
-      
+    </form>
+  </div>
+</div>
+
+<!-- EDIT VISIT MODAL -->
+<div class="modal-overlay" id="editVisitModal">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-edit" style="color:#f59e0b"></i> ভিজিট সম্পাদনা</span>
+      <button class="modal-close" onclick="closeModal('editVisitModal')">×</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="pk" id="editVisitId">
+
+      <!-- Patient info (read-only) -->
+      <div class="form-group">
+        <label>রোগী</label>
+        <input type="text" id="editPatientName" class="form-control" readonly>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>ভিজিটের তারিখ</label>
+          <input type="date" name="visit_date" id="editVisitDate" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>ভিজিটের ধরন</label>
+          <select name="visit_type" id="editVisitType" class="form-control">
+            {% for val,lbl in visit_types %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>লক্ষণ</label>
+        <textarea name="symptoms" id="editSymptoms" class="form-control" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label>রোগ নির্ণয়</label>
+        <textarea name="diagnosis" id="editDiagnosis" class="form-control" rows="2"></textarea>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>ডাক্তার ফি (৳)</label>
+          <input type="number" name="doctor_fee" id="editDoctorFee" class="form-control" min="0" step="any">
+        </div>
+        <div class="form-group">
+          <label>পেমেন্ট পদ্ধতি</label>
+          <select name="payment_method" id="editPaymentMethod" class="form-control">
+            {% for val,lbl in payment_methods %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>পেমেন্ট অবস্থা</label>
+          <select name="payment_status" id="editPaymentStatus" class="form-control">
+            {% for val,lbl in payment_statuses %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>পরবর্তী ফলো-আপ তারিখ</label>
+        <input type="date" name="followup_date" id="editFollowupDate" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>নোট</label>
+        <textarea name="notes" id="editNotes" class="form-control" rows="2"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editVisitModal')">বাতিল</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> আপডেট করুন</button>
+      </div>
     </form>
   </div>
 </div>
@@ -212,6 +367,30 @@ function selectPatient(id, name, phone, pid) {
   const info = document.getElementById('selectedPatientInfo');
   info.innerHTML = `<i class="fas fa-check-circle" style="color:#2e7d32"></i> <strong>${name}</strong> | ${phone} | ${pid}`;
   info.style.display='block';
+}
+
+// --- EDIT VISIT MODAL POPULATION ---
+function openEditVisitModal(visitId) {
+  const row = document.getElementById('visit-row-' + visitId);
+  if (!row) return;
+
+  // Get patient name (from first cell)
+  const patientName = row.cells[0].querySelector('strong').innerText.trim();
+  document.getElementById('editPatientName').value = patientName;
+  document.getElementById('editVisitId').value = visitId;
+
+  // Populate from data attributes
+  document.getElementById('editVisitDate').value = row.dataset.visitDate || '';
+  document.getElementById('editVisitType').value = row.dataset.visitType || 'new';
+  document.getElementById('editSymptoms').value = row.dataset.symptoms || '';
+  document.getElementById('editDiagnosis').value = row.dataset.diagnosis || '';
+  document.getElementById('editDoctorFee').value = row.dataset.doctorFee || '';
+  document.getElementById('editPaymentMethod').value = row.dataset.paymentMethod || 'cash';
+  document.getElementById('editPaymentStatus').value = row.dataset.paymentStatus || 'paid';
+  document.getElementById('editFollowupDate').value = row.dataset.followupDate || '';
+  document.getElementById('editNotes').value = row.dataset.notes || '';
+
+  openModal('editVisitModal');
 }
 </script>
 {% endblock %}

@@ -38,7 +38,6 @@
       <div style="display:flex;gap:8px">
         <a href="tel:{{ v.patient.phone }}" class="btn btn-primary btn-sm"><i class="fas fa-phone"></i> কল করুন</a>
         <a href="{% url 'chamber_patient_detail' v.patient.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-history"></i></a>
-        <a href="{% url 'chamber_prescription' v.pk %}" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-print"></i></a>
       </div>
     </div>
     {% endfor %}

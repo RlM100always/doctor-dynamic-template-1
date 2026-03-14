@@ -46,6 +46,8 @@ path('chamber/quick/', av.chamber_quick_entry, name='chamber_quick_entry'),
 path('chamber/analytics/', av.chamber_analytics, name='chamber_analytics'),
 path('chamber/reports/', av.chamber_reports, name='chamber_reports'),
 path('chamber/patients/search/', av.chamber_patient_search_ajax, name='chamber_patient_search_ajax'),
+# Add to urlpatterns
+path('chamber/add-area-ajax/', av.chamber_add_area_ajax, name='chamber_add_area_ajax'),
 
 
 ]
